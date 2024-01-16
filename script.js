@@ -45,7 +45,7 @@ function loadRandomPokemon() {
 
     const randomIndex = Math.floor(Math.random() * filteredImages.length);
     const imageName = filteredImages[randomIndex];
-    currentPokemon.imageUrl = 'img/' + imageName;
+    currentPokemon.imageUrl = 'img/' + encodeURIComponent(imageName);
 
     // Update the recent Pokémons array
     updateRecentPokemons(imageName);
@@ -262,7 +262,8 @@ function checkAnswer() {
         
         // Special case where form name could be easily mixed up with the pokemon name
         if (currentPokemon.form === "Ash-Greninja" && (nameGuess.toLowerCase() === "ash greninja" || nameGuess.toLowerCase() === "ash-greninja")){
-            nameMatch, formMatch = true;
+            nameMatch = true;
+            formMatch = true;
         } 
         // Default case
         else {
