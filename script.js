@@ -42,7 +42,6 @@ function loadRandomPokemon() {
     const randomIndex = Math.floor(Math.random() * filteredImages.length);
     const imageName = filteredImages[randomIndex];
     currentPokemon.imageUrl = 'img/' + imageName;
-    console.log(currentPokemon.imageUrl);
     // Update the recent Pokémon images array
     updateRecentPokemons(imageName);
 
@@ -232,9 +231,6 @@ function checkAnswer() {
         const type1Guess = document.getElementById('pokemon-type1').value;
         const type2Guess = document.getElementById('pokemon-type2').value;
 
-        
-        console.log(nameFormGuess,genGuess,type1Guess,type2Guess);
-
         const specialFirstWords = ['mr.', 'mr', 'mime', 'tapu', 'roaring', 'iron', 'walking', 'great', 'scream', 'brute', 'flutter', 'slither', 'sandy', 'raging', 'gouging', 'type', 'type:', 'ash'];
 
         let nameGuess;
@@ -276,22 +272,6 @@ function checkAnswer() {
             }
         }
         
-        nameMatch = (nameGuess.toLowerCase() === currentPokemon.name.toLowerCase()) || (nameVariations[currentPokemon.name.toLowerCase()] && nameVariations[currentPokemon.name.toLowerCase()].includes(nameGuess.toLowerCase()));
-
-        let actualFormWords;
-        if (currentPokemon.form){
-            actualFormWords = currentPokemon.form.toLowerCase().split(' ');
-
-            let expandedFormWords = [...actualFormWords];
-            actualFormWords.forEach(word => {
-                if (formVariations[word]) {
-                    expandedFormWords.push(...formVariations[word].map(variant => variant.toLowerCase()));
-                }
-            });
-            formMatch = formGuessWords.every(guessWord => expandedFormWords.includes(guessWord) || ((nameMatch || actualFormWords.length > 1) && optionalFormWords.includes(guessWord))) && 
-                            actualFormWords.every(actualWord => formGuessWords.includes(actualWord) || (formVariations[actualWord] && formVariations[actualWord].some(variant => formGuessWords.includes(variant.toLowerCase()))) || ((nameMatch || actualFormWords.length > 1) && optionalFormWords.includes(actualWord)));
-
-        }
         let genMatch = genGuess === currentPokemon.gen;
         let type1Match = type1Guess === currentPokemon.type1;
         let type2Match = type2Guess === currentPokemon.type2;
@@ -325,7 +305,6 @@ function checkAnswer() {
         }
         currentScore += genMatch ? 20 : 0;
 
-        console.log(currentScore);
 
         scoreSum += currentScore;
         numOfScores++;
