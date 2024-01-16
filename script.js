@@ -187,6 +187,7 @@ const formVariations = {
     "meteor": [""],
     "belly": [""],
     "full": [""],
+    "hero": [""],
     "of": [""],
     "many": [""],
     "battles": [""],
@@ -203,7 +204,7 @@ const formVariations = {
 };
 
 // These are form names for 'default' forms, the player can omit typing them and still score full
-const optionalFormWords = ["50%","mask","confined", "altered", "incarnate", "land", "aria", "midday", "solo", "meteor", "belly", "full", "of", "many", "battles", "sword", "shield", "strike", "rider", "red", "blue", "white", "chest", "face", "cloak"];
+const optionalFormWords = ["50%","mask","confined", "altered", "incarnate", "land", "aria", "midday", "solo", "meteor", "belly", "full", "hero", "of", "many", "battles", "sword", "shield", "strike", "rider", "red", "blue", "white", "chest", "face", "cloak"];
 
 const nameVariations = {
     "nidoran\u2640": ["nidoran", "nidoranf"],
