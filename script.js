@@ -334,6 +334,17 @@ function checkAnswer() {
             maxStreak = Math.max(maxStreak,currStreak);
         } else currStreak = 0;
 
+        // Sound effect logic
+        if (currentScore === 100){
+            playSound('sound-perfect');
+        } else if (currentScore >= 75){
+            playSound('sound-great');
+        } else if (currentScore >= 35){
+            playSound('sound-ok');
+        } else {
+            playSound('sound-bad');
+        }
+
         updateGuessResults(nameMatch, formMatch, genMatch, type1Match, type2Match, type1Partial, type2Partial);
         updateInfoCard();
 
@@ -352,6 +363,11 @@ function checkAnswer() {
         // Load the next Pokémon
         loadRandomPokemon();
     }
+}
+
+function playSound(soundID){
+    var sound = document.getElementById(soundID);
+    sound.play();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
