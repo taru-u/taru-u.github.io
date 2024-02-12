@@ -313,7 +313,7 @@ function checkAnswer() {
         let type1Partial = false;
         let type2Partial = false;
         if ((type1Guess === currentPokemon.type2 && type2Guess === currentPokemon.type1) ){
-            currentScore += (typeScore-typePenalty);
+            currentScore += (typeScore-(typePenalty/5));
             type1Partial = true;
             type2Partial = true;
         } else if (!currentPokemon.type2 && !type2Match && type1Match){
