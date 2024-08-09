@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Pokémon Memorizer</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div id="generation-selection" class="checkbox-group">
+        <label><input type="checkbox" id="gen1" checked> Gen 1</label>
+        <label><input type="checkbox" id="gen2" checked> Gen 2</label>
+        <label><input type="checkbox" id="gen3" checked> Gen 3</label>
+        <label><input type="checkbox" id="gen4" checked> Gen 4</label>
+        <label><input type="checkbox" id="gen5" checked> Gen 5</label>
+        <label><input type="checkbox" id="gen6" checked> Gen 6</label>
+        <label><input type="checkbox" id="gen7" checked> Gen 7</label>
+        <label><input type="checkbox" id="gen8" checked> Gen 8</label>
+        <label><input type="checkbox" id="gen9" checked> Gen 9</label>
+        <!-- Add checkboxes for all generations -->
+    </div>
+    <div id="content-container">
+        <div id="pokemon-display">
+            <img src="" id="pokemon-image" alt="Pokemon Image">
+        </div>
+        <div id ="info">
+            <div id="info-card">
+                <div>#<span id="info-dex" >???</span> <span id="info-name" class="neutral" >???</span><span id="info-form" class="neutral"></span></div>
+                <div>Gen: <span id="info-gen" class="neutral">?</span></div>
+                <div>Type: <span id="info-type1" class="neutral">???</span><span id="typeslash"></span><span id="info-type2" class="neutral"></span></div>
+            </div>
+            <div id="stats">
+                <div id="stats-card">
+                    <div>Accuracy: <span id="accuracy">0</span>% for <span id="total-pokemon">0</span> Pokémon</div>
+                    <div>Current / Max streak: <span id="current-streak">0</span> / <span id="max-streak">0</span></div>
+                </div>
+                <button id="reset-btn" onclick="resetStats()">Reset</button>
+            </div>
+        </div>
+    </div>
+    <div>
+        <input type="text" id="pokemon-name" placeholder="Enter Pokémon Name">
+        <select id="pokemon-gen">
+            <!-- Options for generations -->
+            <option value="1">Generation 1</option>
+            <option value="2">Generation 2</option>
+            <option value="3">Generation 3</option>
+            <option value="4">Generation 4</option>
+            <option value="5">Generation 5</option>
+            <option value="6">Generation 6</option>
+            <option value="7">Generation 7</option>
+            <option value="8">Generation 8</option>
+            <option value="9">Generation 9</option>
+            <!-- Add more generations as needed -->
+        </select>
+        <select id="pokemon-type1">
+            <!-- Options for type1 -->
+            <option value="Normal">Normal</option>
+            <option value="Bug">Bug</option>
+            <option value="Dark">Dark</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Electric">Electric</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Fire">Fire</option>
+            <option value="Flying">Flying</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Grass">Grass</option>
+            <option value="Ground">Ground</option>
+            <option value="Ice">Ice</option>
+            <option value="Poison">Poison</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Rock">Rock</option>
+            <option value="Steel">Steel</option>
+            <option value="Water">Water</option>
+            <!-- Add more types as needed -->
+        </select>
+        <select id="pokemon-type2">
+            <!-- Options for type2 -->
+            <option value="">N/A</option>
+            <option value="Normal">Normal</option>
+            <option value="Bug">Bug</option>
+            <option value="Dark">Dark</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Electric">Electric</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Fire">Fire</option>
+            <option value="Flying">Flying</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Grass">Grass</option>
+            <option value="Ground">Ground</option>
+            <option value="Ice">Ice</option>
+            <option value="Poison">Poison</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Rock">Rock</option>
+            <option value="Steel">Steel</option>
+            <option value="Water">Water</option>
+            <!-- Add more types as needed -->
+        </select>
+        <button id="submit-btn" onclick="checkAnswer()">Submit Guess</button>
+    </div>
+
+    <audio id="sound-perfect" src="sound/guess-perfect.wav" preload="auto"></audio>
+    <audio id="sound-great" src="sound/guess-great.wav" preload="auto"></audio>
+    <audio id="sound-ok" src="sound/guess-ok.wav" preload="auto"></audio>
+    <audio id="sound-bad" src="sound/guess-bad.wav" preload="auto"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
