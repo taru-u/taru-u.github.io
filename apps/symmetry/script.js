@@ -52,6 +52,17 @@ const controlContainer = document.querySelector('.control-container');
 
 let animate = true;
 
+function preloadImages(imageFilenames) {
+    imageFilenames.forEach(function(filename) {
+        const img = new Image();
+        img.src = `./images/${filename}`;
+    });
+}
+
+window.onload = function() {
+    preloadImages(images);
+};
+
 document.addEventListener('keydown', function(event) {
     const key = event.key.toLowerCase(); 
 
