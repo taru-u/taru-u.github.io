@@ -1,0 +1,207 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1f2421; /* This can be removed later as the canvas will be the background */
+}
+
+/* Default positioning: bottom middle */
+.container {
+    position: fixed;
+    bottom: 20px; /* Position the container 20px from the bottom of the window */
+    left: 50%;
+    transform: translateX(-50%); /* Center the container horizontally */
+    text-align: center;
+    z-index: 10; /* Bring the content above the canvas */
+}
+
+#canvasContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Set canvas to full viewport width */
+    height: 100vh; /* Set canvas to full viewport height */
+    z-index: 0; /* Ensure the canvas is behind other content */
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.button-container {
+    margin-top: 20px;
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+}
+
+/* First Row: QWERTY (6 buttons) */
+.qwerty-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6 buttons per row */
+    grid-gap: 10px; /* Adds a small gap between buttons */
+}
+
+/* Second Row: ASDFGH (6 buttons) */
+.asdfgh-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6 buttons per row */
+    grid-gap: 10px; /* Adds a small gap between buttons */
+}
+
+/* Third Row: ZXCVB (5 buttons) */
+.zxcvb-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 buttons per row */
+    grid-gap: 10px; /* Adds a small gap between buttons */
+}
+
+.symmetry-button {
+    width: 60px; /* Set a fixed width */
+    height: 60px; /* Set a fixed height */
+    padding: 10px;
+    font-size: 16px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center the content vertically */
+    align-items: center; /* Center the content horizontally */
+    text-align: center;
+}
+
+.symmetry-button .orbifold-signature {
+    font-size: 14px; /* Adjust the font size to be smaller than the main notation */
+    margin-top: 4px; /* Add some space between the notation and the orbifold signature */
+}
+
+.symmetry-button:hover {
+    background-color: #0056b3;
+}
+
+.control-container {
+    position: fixed;
+    bottom: 20px; /* Distance from the bottom */
+    right: 20px; /* Distance from the right */
+    z-index: 10; /* Make sure it's above the canvas */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+
+#minute-challenge-button {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#minute-challenge-button:hover {
+    background-color: #0056b3;
+}
+
+.checkbox-container {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-container label {
+    margin-right: 10px;
+    font-size: 16px;
+    color: white;
+}
+
+#challenge-info-box {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-family: Arial, sans-serif;
+    align-items: center;
+}
+
+#challenge-info-box p {
+    margin: 5px 0; /* Add some spacing between the lines */
+    color: white; /* Dark text color */
+    font-size: 20px;
+}
+
+/* Score Announcement Box */
+#score-announcement-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the box */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 20; /* Higher z-index to make sure it appears on top */
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+#final-score-text {
+    font-size: 32px; /* Larger font size for emphasis */
+    margin: 0;
+}
+
+/* Hidden state for the info box */
+.hidden {
+    display: none !important;
+}
+
+/* Add transition for smooth fade in and out */
+.container, .control-container {
+    transition: opacity 2s ease; /* Smoothly fade over 1 second */
+    opacity: 1; /* Fully visible by default */
+}
+
+
+/* Media query for screens smaller than 900px */
+@media (max-width: 900px) {
+    .container {
+        left: 20px; /* Align the container to the left with a 20px margin */
+        transform: none; /* Remove the horizontal centering transform */
+        text-align: left; /* Align text to the left */
+    }
+}
+@media (max-width: 640px) {
+    .control-container {
+        position: fixed;
+        bottom: 240px; /* Distance from the bottom */
+        right: 20px; /* Distance from the right */
+        z-index: 10; /* Make sure it's above the canvas */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    .container {
+        left: 20px;
+        transform: none;
+        text-align: right;
+    }
+}
