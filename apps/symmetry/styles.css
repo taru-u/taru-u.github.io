@@ -181,18 +181,10 @@ canvas {
 }
 
 
-/* Media query for screens smaller than 900px */
 @media (max-width: 900px) {
-    .container {
-        left: 20px; /* Align the container to the left with a 20px margin */
-        transform: none; /* Remove the horizontal centering transform */
-        text-align: left; /* Align text to the left */
-    }
-}
-@media (max-width: 640px) {
     .control-container {
         position: fixed;
-        bottom: 240px; /* Distance from the bottom */
+        bottom: 230px; /* Distance from the bottom */
         right: 20px; /* Distance from the right */
         z-index: 10; /* Make sure it's above the canvas */
         display: flex;
@@ -200,16 +192,16 @@ canvas {
         align-items: flex-end;
     }
     .container {
-        left: 20px;
+        left: auto;
+        right: 20px; /* Distance from the right */
         transform: none;
-        text-align: right;
     }
 }
 @media (max-width: 450px) {
 
     
     .container {
-        left: 10px;
+        right: 10px;
         bottom: 10px;
     }
     .control-container {
