@@ -13,9 +13,10 @@ let canvas = null;
 let canvasdiag = 0;
 
 let guessingMode = false;
+let infoVisible = true;
 
-const images = ['001.webp','002.webp','003.webp','004.webp','005.webp','007.webp','008.webp','009.webp',
-                '010.webp','011.webp'];
+const images = ['001.webp','002.webp','003.webp','004.webp','005.webp','006.webp','007.webp','008.webp','009.webp',
+                '010.webp','011.webp','012.webp','013.webp'];
 const groups = ['p1', 'p2', 'pm', 'pg', 'pmm', 'pmg', 'p4', 'p4m', 'p4g', 'cm', 'cmm', 'pgg', 'p3', 'p3m1', 'p31m', 'p6', 'p6m'];
 
 const keyToButtonMap = {
@@ -49,6 +50,9 @@ const scoreAnnouncementBox = document.getElementById('score-announcement-box');
 const finalScoreText = document.getElementById('final-score-text');
 const container = document.querySelector('.container');
 const controlContainer = document.querySelector('.control-container');
+const infoButton = document.getElementById('info-button');
+const infoBox = document.getElementById('info-box');
+const gotItButton = document.getElementById('got-it-button');
 
 let animate = true;
 
@@ -95,7 +99,7 @@ function isMouseInBottom(mouseY) {
 }
 
 document.addEventListener('mousemove', function(event) {
-    if (!guessingMode) {
+    if (!guessingMode && !infoVisible) {
         if (isMouseInBottom(event.clientY)) {
             clearTimeout(fadeTimeout);
             fadeInElements();
@@ -115,7 +119,7 @@ document.addEventListener('mousemove', function(event) {
 });
 document.addEventListener('mouseleave', function() {
     
-    if (!guessingMode) {
+    if (!guessingMode && !infoVisible) {
         clearTimeout(fadeTimeout);
         fadeTimeout = setTimeout(fadeOutElements, 2000);
     }
@@ -129,6 +133,16 @@ animationCheckbox.addEventListener('change', function() {
     } else {
         animate = false;
     }
+});
+
+
+infoButton.addEventListener('click', function() {
+    infoVisible = true;
+    infoBox.classList.remove('hidden');
+});
+gotItButton.addEventListener('click', function() {
+    infoVisible = false;
+    infoBox.classList.add('hidden');
 });
 
 function updateCanvasSize() {
@@ -1777,7 +1791,7 @@ function handleSymmetryButtons(group) {
 
             correctButton.classList.add('incorrect-guess');
         }
-        
+
         setTimeout(() => {
             clickedButton.classList.remove('correct-guess');
             correctButton.classList.remove('incorrect-guess');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallpaper Symmetry Groups</title>
+    <title>Wallpaper Symmetries</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -48,8 +48,21 @@
     <div id="score-announcement-box" class="hidden">
         <p id="final-score-text">Your scored 0 points!</p>
     </div>
+    <!-- Info Box (Hidden by default) -->
+    <div id="info-box">
+        <div class="title-container">
+            <h1>Wallpaper Symmetry Groups</h1>
+            <small>by Taru</small>
+        </div>
+        <p>Welcome to explore the 17 distinct wallpaper symmetry groups! Click a symmetry group button to have the background change to the corresponding group. More detailed explanations of the groups can be found in <a href="https://en.wikipedia.org/wiki/Wallpaper_group" target="_blank">Wikipedia</a>.</p>
+        <p>After getting more familiarized with the symmetries, you can challenge yourself in the 1 Minute Challenge, where you have to recognize the correct group shown in the background as many times as possible within one minute!</p>
+        
+        <!-- "Got it!" Button -->
+        <button id="got-it-button" class="got-it-button">Got it!</button>
+    </div>
     <!-- 1 Minute Challenge Button and Animation Checkbox -->
     <div class="control-container">
+        <button id="info-button">Info</button>
         <div class="checkbox-container">
             <label for="animation-checkbox">Animation</label>
             <input type="checkbox" id="animation-checkbox" checked>
