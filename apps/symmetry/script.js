@@ -95,7 +95,7 @@ function fadeInElements() {
 
 function isMouseInBottom(mouseY) {
     const windowHeight = window.innerHeight;
-    return mouseY > (windowHeight - 300);
+    return mouseY > (windowHeight - 370);
 }
 
 // UI fade out/fade in control
