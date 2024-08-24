@@ -111,13 +111,14 @@ document.addEventListener('mousemove', function(event) {
                 isInBottom = false;
             }
         }
-    } else {
-        isInBottom = true;
     }
 });
 document.addEventListener('mouseleave', function() {
-    clearTimeout(fadeTimeout);
-    fadeTimeout = setTimeout(fadeOutElements, 2000);
+    
+    if (!guessingMode) {
+        clearTimeout(fadeTimeout);
+        fadeTimeout = setTimeout(fadeOutElements, 2000);
+    }
 });
 
 challengeButton.addEventListener('click', startChallenge);
@@ -1755,16 +1756,33 @@ const correctSound = new Audio('sound/correct.wav');
 const incorrectSound = new Audio('sound/incorrect.wav');
 
 function handleSymmetryButtons(group) {
+    const correctButton = document.querySelector(`.symmetry-button[data-group="${currentGroup}"]`);
+    const clickedButton = document.querySelector(`.symmetry-button[data-group="${group}"]`);
+
     if (guessingMode){
         if (group === currentGroup) {
             challengeScore++;
             currentScoreElement.textContent = `${challengeScore} points`;
+            correctSound.pause();
+            correctSound.currentTime = 0;
             correctSound.play();
+
+            clickedButton.classList.add('correct-guess');
         } else {
             challengeScore = Math.max(0, challengeScore-1);
             currentScoreElement.textContent = `${challengeScore} points`;
+            incorrectSound.pause();
+            incorrectSound.currentTime = 0;
             incorrectSound.play();
+
+            correctButton.classList.add('incorrect-guess');
         }
+        
+        setTimeout(() => {
+            clickedButton.classList.remove('correct-guess');
+            correctButton.classList.remove('incorrect-guess');
+        }, 500);
+
         setupAttributes();
         return
     }
@@ -1782,6 +1800,8 @@ let countdownInterval = null;
 
 function startChallenge() {
     
+    
+    fadeInElements();
     if (countdownInterval !== null) {
         clearInterval(countdownInterval);
     }

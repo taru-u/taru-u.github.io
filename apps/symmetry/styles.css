@@ -86,6 +86,16 @@ canvas {
     background-color: #0056b3;
 }
 
+.correct-guess {
+    background-color: rgb(95, 182, 95) !important;
+    transition: background-color 0.5s;
+}
+
+.incorrect-guess {
+    background-color: rgb(156, 57, 57) !important;
+    transition: background-color 0.5s;
+}
+
 .control-container {
     position: fixed;
     bottom: 20px; /* Distance from the bottom */
