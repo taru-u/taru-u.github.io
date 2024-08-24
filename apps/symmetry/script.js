@@ -95,26 +95,29 @@ function isMouseInBottom(mouseY) {
 }
 
 document.addEventListener('mousemove', function(event) {
-
-    if (isMouseInBottom(event.clientY)) {
-        clearTimeout(fadeTimeout);
-        fadeInElements();
-        isInBottom = true;
-
-    } else {
-        if (isInBottom) {
-            // If the mouse just left the bottom area, start the timer
+    if (!guessingMode) {
+        if (isMouseInBottom(event.clientY)) {
             clearTimeout(fadeTimeout);
-            fadeTimeout = setTimeout(fadeOutElements, 1500);
-
-            // Update the flag to indicate that the mouse has left the bottom
-            isInBottom = false;
+            fadeInElements();
+            isInBottom = true;
+    
+        } else {
+            if (isInBottom) {
+                // If the mouse just left the bottom area, start the timer
+                clearTimeout(fadeTimeout);
+                fadeTimeout = setTimeout(fadeOutElements, 2000);
+    
+                // Update the flag to indicate that the mouse has left the bottom
+                isInBottom = false;
+            }
         }
+    } else {
+        isInBottom = true;
     }
 });
 document.addEventListener('mouseleave', function() {
     clearTimeout(fadeTimeout);
-    fadeTimeout = setTimeout(fadeOutElements, 1500);
+    fadeTimeout = setTimeout(fadeOutElements, 2000);
 });
 
 challengeButton.addEventListener('click', startChallenge);
