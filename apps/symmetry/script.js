@@ -100,20 +100,24 @@ function isMouseInBottom(mouseY) {
 
 // UI fade out/fade in control
 document.addEventListener('mousemove', function(event) {
+    if (touchDetected) return;
     if (!guessingMode && !infoVisible) {
         if (isMouseInBottom(event.clientY)) {
-            clearTimeout(fadeTimeout);
-            fadeInElements();
             isInBottom = true;
-    
-        } else {
-            if (isInBottom) {
+            if (!touchDetected){
+                clearTimeout(fadeTimeout);
+                fadeInElements();
 
+            }
+        } else if (isInBottom){
+            isInBottom = false;
+            if (!touchDetected){
                 clearTimeout(fadeTimeout);
                 fadeTimeout = setTimeout(fadeOutElements, 2000);
-    
-                isInBottom = false;
+
             }
+
+    
         }
     }
 });
@@ -122,6 +126,26 @@ document.addEventListener('mouseleave', function() {
     if (!guessingMode && !infoVisible) {
         clearTimeout(fadeTimeout);
         fadeTimeout = setTimeout(fadeOutElements, 2000);
+    }
+});
+let fadedIn = true;
+let touchDetected = false;
+document.addEventListener('touchstart', function(event) { 
+
+    if (isMouseInBottom(event.touches[0].clientY)) isInBottom = true;
+    else isInBottom = false;
+    touchDetected = true;
+
+    if (!guessingMode && !infoVisible) {
+        if (fadedIn && !isInBottom){
+            clearTimeout(fadeTimeout);
+            fadeOutElements();
+            fadedIn = false;
+        } else {
+            clearTimeout(fadeTimeout);
+            fadeInElements();
+            fadedIn = true;
+        }
     }
 });
 
@@ -141,6 +165,7 @@ infoButton.addEventListener('click', function() {
 });
 gotItButton.addEventListener('click', function() {
     infoVisible = false;
+    isInBottom = true;
     infoBox.classList.add('hidden');
 });
 
