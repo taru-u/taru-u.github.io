@@ -3,26 +3,24 @@ body {
     margin: 0;
     height: 100vh;
     overflow: hidden;
-    background-color: #1f2421; /* This can be removed later as the canvas will be the background */
 }
 
-/* Default positioning: bottom middle */
 .container {
     position: fixed;
-    bottom: 20px; /* Position the container 20px from the bottom of the window */
+    bottom: 20px;
     left: 50%;
-    transform: translateX(-50%); /* Center the container horizontally */
+    transform: translateX(-50%); 
     text-align: center;
-    z-index: 10; /* Bring the content above the canvas */
+    z-index: 10; 
 }
 
 #canvasContainer {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw; /* Set canvas to full viewport width */
-    height: 100vh; /* Set canvas to full viewport height */
-    z-index: 0; /* Ensure the canvas is behind other content */
+    width: 100vw; 
+    height: 100vh;
+    z-index: 0; 
 }
 
 canvas {
@@ -41,27 +39,27 @@ canvas {
 /* First Row: QWERTY (6 buttons) */
 .qwerty-row {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6 buttons per row */
-    grid-gap: 10px; /* Adds a small gap between buttons */
+    grid-template-columns: repeat(6, 1fr); 
+    grid-gap: 10px; 
 }
 
 /* Second Row: ASDFGH (6 buttons) */
 .asdfgh-row {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6 buttons per row */
-    grid-gap: 10px; /* Adds a small gap between buttons */
+    grid-template-columns: repeat(6, 1fr); 
+    grid-gap: 10px;
 }
 
 /* Third Row: ZXCVB (5 buttons) */
 .zxcvb-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5 buttons per row */
-    grid-gap: 10px; /* Adds a small gap between buttons */
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 10px; 
 }
 
 .symmetry-button {
-    width: 60px; /* Set a fixed width */
-    height: 60px; /* Set a fixed height */
+    width: 60px; 
+    height: 60px; 
     padding: 10px;
     font-size: 16px;
     background-color: rgba(0, 0, 0, 0.8);
@@ -72,14 +70,14 @@ canvas {
     transition: background-color 0.3s;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Center the content vertically */
-    align-items: center; /* Center the content horizontally */
+    justify-content: center; 
+    align-items: center; 
     text-align: center;
 }
 
 .symmetry-button .orbifold-signature {
-    font-size: 14px; /* Adjust the font size to be smaller than the main notation */
-    margin-top: 4px; /* Add some space between the notation and the orbifold signature */
+    font-size: 14px;
+    margin-top: 4px; 
 }
 
 .symmetry-button:hover {
@@ -98,9 +96,9 @@ canvas {
 
 .control-container {
     position: fixed;
-    bottom: 20px; /* Distance from the bottom */
-    right: 20px; /* Distance from the right */
-    z-index: 10; /* Make sure it's above the canvas */
+    bottom: 20px; 
+    right: 20px; 
+    z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -155,40 +153,38 @@ canvas {
 }
 
 #challenge-info-box p {
-    margin: 5px 0; /* Add some spacing between the lines */
-    color: white; /* Dark text color */
+    margin: 5px 0; 
+    color: white;
     font-size: 20px;
 }
 
-/* Score Announcement Box */
 #score-announcement-box {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Center the box */
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5); 
     padding: 20px;
     border-radius: 10px;
     text-align: center;
-    z-index: 20; /* Higher z-index to make sure it appears on top */
+    z-index: 20; 
     color: white;
     font-family: Arial, sans-serif;
 }
 
 #final-score-text {
-    font-size: 32px; /* Larger font size for emphasis */
+    font-size: 32px;
     margin: 0;
 }
 
-/* Hidden state for the info box */
 .hidden {
     display: none !important;
 }
 
-/* Add transition for smooth fade in and out */
+
 .container, .control-container {
-    transition: opacity 2s ease; /* Smoothly fade over 1 second */
-    opacity: 1; /* Fully visible by default */
+    transition: opacity 2s ease; 
+    opacity: 1; 
 }
 
 #info-box {
@@ -204,7 +200,7 @@ canvas {
     text-align: left;
     color: white;
     font-family: Arial, sans-serif;
-    width: 80%; /* Adjust width as needed */
+    width: 80%;
     max-width: 600px;
 }
 
@@ -223,13 +219,13 @@ canvas {
 .title-container small {
     font-size: 14px;
     text-align: right;
-    margin-left: auto; /* Align Maker Name to the right */
+    margin-left: auto; 
 }
 
 #info-box p {
     margin: 10px 0;
     font-size: 16px;
-    text-align: justify; /* Justify the text */
+    text-align: justify;
 }
 
 #info-box a {
@@ -238,53 +234,53 @@ canvas {
 }
 
 .got-it-button {
-    background-color: rgb(95, 182, 95); /* Green background */
+    background-color: rgb(95, 182, 95);
     color: white;
     border: none;
     padding: 10px 20px;
     font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
-    margin-left: auto; /* Align button to the right */
-    display: block; /* Ensure it's treated as a block-level element */
+    margin-left: auto; 
+    display: block; 
     cursor: pointer;
 }
 
 .got-it-button:hover {
-    background-color: rgb(22, 88, 37); /* Darker green on hover */
+    background-color: rgb(22, 88, 37); 
 }
 
 @media (max-width: 900px) {
+    
     .control-container {
         position: fixed;
-        bottom: 230px; /* Distance from the bottom */
-        right: 20px; /* Distance from the right */
-        z-index: 10; /* Make sure it's above the canvas */
+        bottom: 230px; 
+        right: 20px; 
+        z-index: 10; 
         display: flex;
         flex-direction: column;
         align-items: flex-end;
     }
     .container {
         left: auto;
-        right: 20px; /* Distance from the right */
+        right: 20px; 
         transform: none;
     }
 }
 @media (max-width: 450px) {
 
-    
     .container {
         right: 10px;
         bottom: 10px;
     }
     .control-container {
-        bottom: 195px; /* Distance from the bottom */
+        bottom: 195px; 
         right: 10px;
     }
     
     .symmetry-button {
-        width: 50px; /* Set a fixed width */
-        height: 50px; /* Set a fixed height */
+        width: 50px; 
+        height: 50px; 
         padding: 10px;
         font-size: 16px;
         background-color: rgba(0, 0, 0, 0.8);
@@ -295,27 +291,26 @@ canvas {
         transition: background-color 0.3s;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* Center the content vertically */
-        align-items: center; /* Center the content horizontally */
+        justify-content: center; 
+        align-items: center; 
         text-align: center;
     }
 }
 
 @media (max-width: 450px) {
 
-    
     .container {
         right: 10px;
         bottom: 10px;
     }
     .control-container {
-        bottom: 205px; /* Distance from the bottom */
+        bottom: 205px; 
         right: 10px;
     }
     
     .symmetry-button {
-        width: 55px; /* Set a fixed width */
-        height: 55px; /* Set a fixed height */
+        width: 55px; 
+        height: 55px; 
         padding: 10px;
         font-size: 16px;
         background-color: rgba(0, 0, 0, 0.8);
@@ -326,26 +321,25 @@ canvas {
         transition: background-color 0.3s;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* Center the content vertically */
-        align-items: center; /* Center the content horizontally */
+        justify-content: center; 
+        align-items: center; 
         text-align: center;
     }
 }
 @media (max-width: 400px) {
 
-    
     .container {
         right: 10px;
         bottom: 10px;
     }
     .control-container {
-        bottom: 185px; /* Distance from the bottom */
+        bottom: 185px; 
         right: 10px;
     }
     
     .symmetry-button {
-        width: 48px; /* Set a fixed width */
-        height: 48px; /* Set a fixed height */
+        width: 48px; 
+        height: 48px; 
         padding: 10px;
         font-size: 16px;
         background-color: rgba(0, 0, 0, 0.8);
@@ -356,8 +350,8 @@ canvas {
         transition: background-color 0.3s;
         display: flex;
         flex-direction: column;
-        justify-content: center; /* Center the content vertically */
-        align-items: center; /* Center the content horizontally */
+        justify-content: center; 
+        align-items: center; 
         text-align: center;
     }
 }

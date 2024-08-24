@@ -56,6 +56,7 @@ const gotItButton = document.getElementById('got-it-button');
 
 let animate = true;
 
+// preload images to reduce sudden lag
 function preloadImages(imageFilenames) {
     imageFilenames.forEach(function(filename) {
         const img = new Image();
@@ -70,7 +71,6 @@ window.onload = function() {
 document.addEventListener('keydown', function(event) {
     const key = event.key.toLowerCase(); 
 
-    
     if (keyToButtonMap[key]) {
         keyToButtonMap[key].click();
     }
@@ -98,6 +98,7 @@ function isMouseInBottom(mouseY) {
     return mouseY > (windowHeight - 300);
 }
 
+// UI fade out/fade in control
 document.addEventListener('mousemove', function(event) {
     if (!guessingMode && !infoVisible) {
         if (isMouseInBottom(event.clientY)) {
@@ -107,11 +108,10 @@ document.addEventListener('mousemove', function(event) {
     
         } else {
             if (isInBottom) {
-                // If the mouse just left the bottom area, start the timer
+
                 clearTimeout(fadeTimeout);
                 fadeTimeout = setTimeout(fadeOutElements, 2000);
     
-                // Update the flag to indicate that the mouse has left the bottom
                 isInBottom = false;
             }
         }
@@ -135,7 +135,6 @@ animationCheckbox.addEventListener('change', function() {
     }
 });
 
-
 infoButton.addEventListener('click', function() {
     infoVisible = true;
     infoBox.classList.remove('hidden');
@@ -145,14 +144,14 @@ gotItButton.addEventListener('click', function() {
     infoBox.classList.add('hidden');
 });
 
+
 function updateCanvasSize() {
     canvas = document.getElementById('tessellationCanvas');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     canvasdiag = Math.sqrt(canvas.height**2 + canvas.width**2)
+    // make sure when enlarging window, we also have to increase the size of the tiles
     if (currentGroup){
-        
-        
         if (currentGroup == 'p1' || currentGroup == 'p2'|| currentGroup == 'pmm' || currentGroup == 'pmg'){
             tileWidth = Math.max(Math.max(canvasdiag*0.06, 80), tileWidth);
             tileHeight = Math.max(Math.max(canvasdiag*0.06, 80), tileHeight);
@@ -183,7 +182,6 @@ function updateCanvasSize() {
             tileWidth = Math.sqrt(3)/2*tileHeight
             tileOverhang = tileWidth/2
         }
-
     }
 }
 
@@ -196,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAttributes();
 });
 
-
 document.querySelectorAll('.symmetry-button').forEach(button => {
     button.addEventListener('click', () => handleSymmetryButtons(button.getAttribute('data-group')));
 });
@@ -206,12 +203,14 @@ let tileHeight = 0;
 let tileOverhang = 0;
 
 function setupAttributes() {
+    // randomize the image
     const randomImage = images[Math.floor(Math.random() * images.length)];
     if (guessingMode){
         currentGroup = groups[Math.floor(Math.random() * groups.length)];
     }
     image = new Image();
 
+    // randomize the tile size and possibly shape
     if (currentGroup == 'p1' || currentGroup == 'p2'){
         tileWidth = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
         tileHeight = tileWidth
@@ -258,8 +257,9 @@ function setupAttributes() {
         tilesizemulti = 1.5
     }
     image.onload = function () {
-
+        // randomize rotation, rotation speed, image scroll speed, image initial coords
         gridRotationAngle = Math.random() * 2 * Math.PI;
+
         vrot = 0;
         while (Math.abs(vrot) < 0.0007){
             vrot = Math.random()*0.005 - 0.0025
@@ -299,9 +299,10 @@ function animateTessellation(timestamp) {
     }   
 }
 
+// get the number of rows and cols required to cover the canvas in all rotations
 function calculateTileGrid(boundingBoxWidth, boundingBoxHeight, tileWidth, tileHeight) {
-    const columns = Math.ceil(boundingBoxWidth / tileWidth); // Extra to ensure complete coverage
-    const rows = Math.ceil(boundingBoxHeight / tileHeight);   // Extra to ensure complete coverage
+    const columns = Math.ceil(boundingBoxWidth / tileWidth); 
+    const rows = Math.ceil(boundingBoxHeight / tileHeight); 
     return { columns, rows };
 }
 
@@ -310,17 +311,19 @@ function tessellate(image, width, height, overhang) {
     const ctx = canvas.getContext('2d');
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
-    //ctx.clearRect(0,0,canvasWidth,canvasHeight);
+
     let heightmult = 1
     let rowheight = height
     let colwidth = width
 
+    // special case to handle groups that tile hexagonally
     if (currentGroup == 'p3' || currentGroup == 'p31m' || currentGroup == 'p3m1' || currentGroup == 'p6' || currentGroup == 'p6m'){
         rowheight = height*1.5
         colwidth = width*2
         heightmult = 1.5
     }
     
+    // prevent image to scroll over its bounds. this could be done with wraparound but that can up to quadruple draw calls momentarily, causing lag
     if (x > image.width - (width+overhang) || x < 0){
         vx *= -1;
         x += vx*2
@@ -331,6 +334,8 @@ function tessellate(image, width, height, overhang) {
     }
     
     const { columns, rows } = calculateTileGrid(canvasdiag, canvasdiag, colwidth, rowheight);
+
+    // rotate pivot in the middle
     ctx.translate(canvasWidth / 2, canvasHeight / 2);
     ctx.rotate(gridRotationAngle);
     ctx.translate(-canvasWidth / 2, -canvasHeight / 2);
@@ -338,6 +343,7 @@ function tessellate(image, width, height, overhang) {
     ct = 0;
     let row = 0;
     
+    // draw the tiles. some singular extra rows and cols had to be added to prevent gaps in some very specific cases
     for (let j = canvasHeight/2-rowheight*rows/2; j < canvasHeight/2+rowheight*(rows+1)/2; j += rowheight) {
         for (let i = canvasWidth/2-colwidth*(columns+1)/2; i < canvasWidth/2+colwidth*columns/2; i += colwidth) {
 
@@ -351,6 +357,7 @@ function tessellate(image, width, height, overhang) {
 
 let ct = 0
 
+// draw the contents in a single tile, depending on the group
 function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
     if (currentGroup == 'p1'){
         let offset = overhang*row % width;
@@ -362,7 +369,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i  - tol, j + height + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width + overhang + tol*2, height + tol*2,
@@ -383,7 +390,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i  - tol - overhang/2, j + height/2 + tol*2);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width + overhang + tol*2, height + tol*2,
@@ -402,7 +409,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i  - overhang/2, j + height/2 )
         ctx.rotate(Math.PI);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width + overhang + tol*2, height/2 + tol*2,
@@ -412,7 +419,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.restore();
     }
     else if (currentGroup == 'pm'){
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2, height,
@@ -423,7 +430,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j + height / 2);
         ctx.scale(-1, 1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2, height, 
@@ -433,7 +440,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.restore();
     }
     else if (currentGroup == 'pg'){
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2, height,
@@ -444,7 +451,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j);
         ctx.scale(1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width / 2, height, 
@@ -462,7 +469,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i  + width/2, j + height + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -480,7 +487,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i, j - height )
         ctx.scale(1,-1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -500,7 +507,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i  + width/2 + tol, j + height + tol*2);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2  + tol*2, height + tol*2,
@@ -518,7 +525,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i, j)
         ctx.scale(-1,1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2  + tol*2, height + tol*2,
@@ -536,7 +543,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i, j - height )
         ctx.scale(1,-1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2  + tol*2, height + tol*2,
@@ -554,7 +561,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i, j - height )
         ctx.scale(-1,-1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2  + tol*2, height + tol*2,
@@ -564,7 +571,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.restore();
     }
     else if (currentGroup == 'pmm'){
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol,
@@ -575,7 +582,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j);
         ctx.scale(-1, 1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol, 
@@ -587,7 +594,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i, j + height / 2);
         ctx.scale(1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol,
@@ -599,7 +606,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j + height / 2);
         ctx.scale(-1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol,
@@ -618,7 +625,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo( i - tol, j + height/2 + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol*2, height / 2+ tol,
@@ -637,7 +644,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width, j);
         ctx.scale(-1, 1); 
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol,
@@ -656,7 +663,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width / 2, j + height);
         ctx.rotate(Math.PI);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol*2, height / 2+ tol,
@@ -675,7 +682,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width / 2, j + height);
         ctx.scale(1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+ tol, height / 2+ tol, 
@@ -692,7 +699,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo( i  + width/2, j + height/2 + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height/2 + tol*2,
@@ -710,7 +717,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate( i+ width, j )
         ctx.rotate(Math.PI)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height/2 + tol*2,
@@ -727,7 +734,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate( i+ width/2+ width, j-height/2 )
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height/2 + tol*2,
@@ -744,7 +751,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate( i+ width/2, j+height/2 )
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height/2 + tol*2,
@@ -754,7 +761,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.restore();
     }
     else if (currentGroup == 'p4'){
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+tol, width / 2+tol,
@@ -765,7 +772,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j);
         ctx.rotate(90 * Math.PI / 180);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+tol, width / 2+tol,
@@ -777,7 +784,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i + width / 2, j + width / 2);
         ctx.rotate(180 * Math.PI / 180);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+tol, width / 2+tol,
@@ -789,7 +796,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.save();
         ctx.translate(i, j + width / 2);
         ctx.rotate(270 * Math.PI / 180);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width / 2+tol, width / 2+tol,
@@ -806,7 +813,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(i-tol, j + width/2+ tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2,
@@ -825,7 +832,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(i + width/2, j + width/2);
         ctx.scale(-1, 1);
         ctx.rotate(Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -843,7 +850,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width, j + width/2);
         ctx.rotate(Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2, 
@@ -862,7 +869,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(i + width, j + width/2);
         ctx.scale(1, -1);
         ctx.rotate(Math.PI);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2, 
@@ -880,7 +887,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width, j + width);
         ctx.rotate(Math.PI); 
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,          
             width/2+tol*2, width/2+tol*2,
@@ -899,7 +906,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(i + width/2, j + width);
         ctx.scale(1, -1);
         ctx.rotate(Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2,
@@ -917,7 +924,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width/2, j + width/2);
         ctx.rotate(-Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2,
@@ -935,7 +942,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width/2, j + width/2);
         ctx.scale(1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2,
@@ -952,7 +959,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(i-tol, j + width/2+ tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width/2+tol*2, width/2+tol*2,
@@ -971,7 +978,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(i, j);
         ctx.scale(-1, 1);
         ctx.rotate(-Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -989,7 +996,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i+ width, j);
         ctx.rotate(Math.PI / 2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1007,7 +1014,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i+ width, j);
         ctx.scale(1, -1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1025,7 +1032,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i + width, j + width);
         ctx.rotate(Math.PI);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1044,7 +1051,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(i + width, j + width);
         ctx.rotate(-Math.PI/2);
         ctx.scale(-1, 1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1062,7 +1069,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i, j + width);
         ctx.rotate(-Math.PI/2);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1080,7 +1087,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(i, j + width);
         ctx.scale(-1, 1);
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y, 
             width/2+tol*2, width/2+tol*2,
@@ -1100,7 +1107,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i - tol , j + height + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1119,7 +1126,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1138,7 +1145,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(-Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1157,7 +1164,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i + width , j + height*1.5 + tol*2);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5+ tol*2,
@@ -1177,7 +1184,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i, j)
         ctx.rotate(-Math.PI/3)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1194,7 +1201,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width*2 , j )
         ctx.rotate(Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1212,7 +1219,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(-Math.PI/3*2)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1231,7 +1238,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width, j + height*1.5)
         ctx.rotate(-Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1250,7 +1257,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(Math.PI)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1270,7 +1277,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i - tol , j + height + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height+ tol*2,
@@ -1288,7 +1295,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i + width, j + height*1.5)
         ctx.rotate(-Math.PI/3)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -1307,7 +1314,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i, j)
         ctx.rotate(Math.PI/3)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -1324,7 +1331,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -1343,7 +1350,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width*2, j)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -1360,7 +1367,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(-Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height + tol*2,
@@ -1379,7 +1386,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i + width , j + height*1.5 + tol*2);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5+ tol*2,
@@ -1396,7 +1403,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(Math.PI)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1413,7 +1420,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width*2 , j )
         ctx.rotate(Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1430,7 +1437,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i, j)
         ctx.rotate(-Math.PI/3)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1449,7 +1456,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width, j + height*1.5)
         ctx.rotate(-Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1467,7 +1474,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width*2 , j)
         ctx.rotate(Math.PI/3)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*1.5 + tol*2,
@@ -1486,7 +1493,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.lineTo(offset + i + width/2 , j + height*0.75 + tol);
         ctx.closePath();
         ctx.clip();
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75+ tol*2,
@@ -1505,7 +1512,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i,j)
         ctx.rotate(-Math.PI/3)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75+ tol*2,
@@ -1523,7 +1530,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width, j + height*1.5)
         ctx.rotate(Math.PI)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1541,7 +1548,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i + width, j + height*1.5)
         ctx.rotate(-Math.PI/3)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1560,7 +1567,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i , j )
         ctx.rotate(Math.PI/3)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75+ tol*2,
@@ -1578,7 +1585,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i , j )
         ctx.rotate(-Math.PI/3)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1596,7 +1603,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1614,7 +1621,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(-Math.PI/3*2)
         ctx.scale(1,-1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1632,7 +1639,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i +width*2, j)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1651,7 +1658,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i +width*2, j)
         ctx.rotate(Math.PI/3)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1669,7 +1676,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.clip();
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(-Math.PI/3*2)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1688,7 +1695,7 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
         ctx.translate(offset + i + width , j + height*1.5)
         ctx.rotate(Math.PI)
         ctx.scale(-1,1)
-        drawImageWrapAround(ctx,
+        ctx.drawImage(
             image,
             x, y,
             width  + tol*2, height*0.75 + tol*2,
@@ -1699,72 +1706,59 @@ function drawTile(image,ctx,i,j,width, height, overhang, row,x,y){
     }
 }
 
-function drawImageWrapAround(ctx,image,x,y,width,height,i,j,tilew,tileh){
-    
-    ctx.drawImage(image, x, y, width, height, i, j, tilew, tileh);
-    ++ct;
-    return
+// leftover function, this lagged too much due to draw calls doubling or even quadrupling when image was wrapping around
+function drawImageWraparound(ctx, image,x,y,width,height,i,j,tilew,tileh){
 
-    // Calculate the actual coordinates in the source image based on x and y
     let sx = x;
     let sy = y;
 
+    // no wrap
     if (sx + width <= image.width && sy + height <= image.height){
-        // No wrapping needed in x direction
         ctx.drawImage(image, sx, sy, width, height, i, j, tilew, tileh);
         ++ct;
         return
     }
 
+    // wrap in both dimensions
     if (sx + width > image.width && sy + height > image.height) {
-        // In case both x and y directions need wrapping, handle it
         let widthToEdge = image.width - sx;
         let heightToEdge = image.height - sy;
 
-        // Draw the part that fits within the image width
         ctx.drawImage(image, sx, sy, widthToEdge, height, i, j, widthToEdge, tileh);
 
-        // Draw the wrapped part from the left edge of the image
         let remainingWidth = width - widthToEdge;
         ctx.drawImage(image, 0, sy, remainingWidth, height, i + widthToEdge, j, remainingWidth+tol, tileh);
 
-        // Draw the wrapped part from the top edge of the image
         let remainingHeight = height - heightToEdge;
         ctx.drawImage(image, sx, 0, width, remainingHeight, i, j + heightToEdge, tilew, remainingHeight+tol);
 
-        // Draw top-right corner of the tile
         ctx.drawImage(image, 0, 0, width - widthToEdge, height - heightToEdge, i + widthToEdge, j + heightToEdge, tilew - widthToEdge, tileh - heightToEdge);
         ct += 4;
         return;
     }
 
-    // Handle wrapping in the x direction
+    // wrap in x dimension
     if (sx + width > image.width) {
-        // Draw the part that fits within the image width
         let widthToEdge = image.width - sx;
         ctx.drawImage(image, sx, sy, widthToEdge, height, i, j, widthToEdge, tileh);
 
-        // Draw the wrapped part from the left edge of the image
         let remainingWidth = width - widthToEdge;
         ctx.drawImage(image, 0, sy, remainingWidth, height, i + widthToEdge, j, remainingWidth+tol, tileh);
         ct += 2;
         return;
     } 
 
-    // Handle wrapping in the y direction
+    // wrap in y dimension
     if (sy + height > image.height) {
-        // Draw the part that fits within the image height
         let heightToEdge = image.height - sy;
         ctx.drawImage(image, sx, sy, width, heightToEdge, i, j, tilew, heightToEdge);
 
-        // Draw the wrapped part from the top edge of the image
         let remainingHeight = height - heightToEdge;
         ctx.drawImage(image, sx, 0, width, remainingHeight, i, j + heightToEdge, tilew, remainingHeight+tol);
         ct += 2;
     } 
 
 }
-
 
 const correctSound = new Audio('sound/correct.wav');
 const incorrectSound = new Audio('sound/incorrect.wav');
@@ -1773,6 +1767,7 @@ function handleSymmetryButtons(group) {
     const correctButton = document.querySelector(`.symmetry-button[data-group="${currentGroup}"]`);
     const clickedButton = document.querySelector(`.symmetry-button[data-group="${group}"]`);
 
+    // button behavior in 1 minute challenge
     if (guessingMode){
         if (group === currentGroup) {
             challengeScore++;
@@ -1780,7 +1775,6 @@ function handleSymmetryButtons(group) {
             correctSound.pause();
             correctSound.currentTime = 0;
             correctSound.play();
-
             clickedButton.classList.add('correct-guess');
         } else {
             challengeScore = Math.max(0, challengeScore-1);
@@ -1788,7 +1782,6 @@ function handleSymmetryButtons(group) {
             incorrectSound.pause();
             incorrectSound.currentTime = 0;
             incorrectSound.play();
-
             correctButton.classList.add('incorrect-guess');
         }
 
@@ -1800,6 +1793,7 @@ function handleSymmetryButtons(group) {
         setupAttributes();
         return
     }
+    // in default mode
     currentGroup = group;
     setupAttributes();
 }
@@ -1811,11 +1805,11 @@ function hideAnnouncementBox(){
 let challengeScore = 0;
 let countdownInterval = null; 
 
-
+// 1 minute challenge
 function startChallenge() {
     
-    
     fadeInElements();
+
     if (countdownInterval !== null) {
         clearInterval(countdownInterval);
     }
@@ -1837,7 +1831,7 @@ function startChallenge() {
         timeLeft--;
         timeLeftElement.textContent = `${timeLeft} seconds left`;
 
-        
+        // time over
         if (timeLeft <= 0) {
             finalScoreText.textContent = `You scored ${challengeScore} points!`;
             scoreAnnouncementBox.classList.remove('hidden'); 
