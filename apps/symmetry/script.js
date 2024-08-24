@@ -14,8 +14,8 @@ let canvasdiag = 0;
 
 let guessingMode = false;
 
-const images = ['001.webp','002.jpg','003.webp','004.webp','005.png','007.webp','008.webp','009.png',
-                '010.jpg','011.webp'];
+const images = ['001.webp','002.webp','003.webp','004.webp','005.webp','007.webp','008.webp','009.webp',
+                '010.webp','011.webp'];
 const groups = ['p1', 'p2', 'pm', 'pg', 'pmm', 'pmg', 'p4', 'p4m', 'p4g', 'cm', 'cmm', 'pgg', 'p3', 'p3m1', 'p31m', 'p6', 'p6m'];
 
 const keyToButtonMap = {

@@ -205,3 +205,33 @@ canvas {
         text-align: right;
     }
 }
+@media (max-width: 450px) {
+
+    
+    .container {
+        left: 10px;
+        bottom: 10px;
+    }
+    .control-container {
+        bottom: 195px; /* Distance from the bottom */
+        right: 10px;
+    }
+    
+    .symmetry-button {
+        width: 50px; /* Set a fixed width */
+        height: 50px; /* Set a fixed height */
+        padding: 10px;
+        font-size: 16px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Center the content vertically */
+        align-items: center; /* Center the content horizontally */
+        text-align: center;
+    }
+}
