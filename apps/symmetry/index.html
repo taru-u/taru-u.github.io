@@ -48,6 +48,16 @@
     <div id="score-announcement-box" class="hidden">
         <p id="final-score-text">Your scored 0 points!</p>
     </div>
+    <!-- 1 Minute Challenge Button and Animation Checkbox -->
+    <div class="control-container">
+        <button id="info-button">Info</button>
+        <div class="checkbox-container">
+            <label for="animation-checkbox">Animation</label>
+            <input type="checkbox" id="animation-checkbox" checked>
+        </div>
+        <button id="minute-challenge-button">1 Minute Challenge</button>
+    </div>
+    
     <!-- Info Box (Hidden by default) -->
     <div id="info-box">
         <div class="title-container">
@@ -59,15 +69,6 @@
         
         <!-- "Got it!" Button -->
         <button id="got-it-button" class="got-it-button">Got it!</button>
-    </div>
-    <!-- 1 Minute Challenge Button and Animation Checkbox -->
-    <div class="control-container">
-        <button id="info-button">Info</button>
-        <div class="checkbox-container">
-            <label for="animation-checkbox">Animation</label>
-            <input type="checkbox" id="animation-checkbox" checked>
-        </div>
-        <button id="minute-challenge-button">1 Minute Challenge</button>
     </div>
     <canvas id="tessellationCanvas"></canvas>
     <script src="script.js"></script>
