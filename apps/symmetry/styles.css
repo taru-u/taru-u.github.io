@@ -104,16 +104,110 @@ canvas {
     align-items: flex-end;
 }
 
+.settings-container {
+    display: flex;
+    align-items: center;
+}
+
+#settings-button, #minute-challenge-button {
+    height: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#settings-button {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    margin-right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px; 
+    height: auto;
+    margin-top: 8px;
+
+}
+
+#settings-button:hover {
+    background-color: #0056b3;
+}
+
+#challenge-settings {
+    position: fixed;
+    bottom: 170px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    text-align: left;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+#challenge-settings h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+#challenge-form {
+    display: flex;
+    flex-direction: column;
+}
+
+#challenge-form .checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 0;
+}
+
+#challenge-form label {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+#challenge-form input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+#save-settings-button {
+    background-color: rgb(95, 182, 95);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    align-self: flex-end;
+}
+
+#save-settings-button:hover {
+    background-color: rgb(22, 88, 37);
+}
 
 #minute-challenge-button, #info-button {
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 10px;
     font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
     margin-top: 10px;
+}
+
+#minute-challenge-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto; 
 }
 
 #minute-challenge-button:hover, #info-button:hover {
@@ -163,8 +257,8 @@ canvas {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.5); 
-    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.8); 
+    padding: 10px;
     border-radius: 10px;
     text-align: center;
     z-index: 20; 
@@ -173,7 +267,7 @@ canvas {
 }
 
 #final-score-text {
-    font-size: 32px;
+    font-size: 24px;
     margin: 0;
 }
 

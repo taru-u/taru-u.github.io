@@ -1,5 +1,5 @@
 let currentGroup = null;
-const tol = 1; // tolerance value to make sure there are no >1 pixel gaps
+const tol = 1; // tolerance value to make sure there are no <1 pixel gaps
 const imageFolder = 'images/';
 
 let x = 0; 
@@ -53,6 +53,10 @@ const controlContainer = document.querySelector('.control-container');
 const infoButton = document.getElementById('info-button');
 const infoBox = document.getElementById('info-box');
 const gotItButton = document.getElementById('got-it-button');
+const settingsButton = document.getElementById("settings-button");
+const challengeSettings = document.getElementById("challenge-settings");
+const saveSettingsButton = document.getElementById("save-settings-button");
+const groupCheckboxes = document.querySelectorAll(".group-checkbox");
 
 let animate = true;
 
@@ -101,7 +105,7 @@ function isMouseInBottom(mouseY) {
 // UI fade out/fade in control
 document.addEventListener('mousemove', function(event) {
     if (touchDetected) return;
-    if (!guessingMode && !infoVisible) {
+    if (!guessingMode && !infoVisible && !inChallengeSettings) {
         if (isMouseInBottom(event.clientY)) {
             isInBottom = true;
             if (!touchDetected){
@@ -123,7 +127,7 @@ document.addEventListener('mousemove', function(event) {
 });
 document.addEventListener('mouseleave', function() {
     
-    if (!guessingMode && !infoVisible) {
+    if (!guessingMode && !infoVisible && !inChallengeSettings) {
         clearTimeout(fadeTimeout);
         fadeTimeout = setTimeout(fadeOutElements, 2000);
     }
@@ -136,7 +140,7 @@ document.addEventListener('touchstart', function(event) {
     else isInBottom = false;
     touchDetected = true;
 
-    if (!guessingMode && !infoVisible) {
+    if (!guessingMode && !infoVisible && !inChallengeSettings) {
         if (fadedIn && !isInBottom){
             clearTimeout(fadeTimeout);
             fadeOutElements();
@@ -160,6 +164,7 @@ animationCheckbox.addEventListener('change', function() {
 });
 
 infoButton.addEventListener('click', function() {
+    scoreAnnouncementBox.classList.add('hidden'); 
     infoVisible = true;
     infoBox.classList.remove('hidden');
 });
@@ -169,6 +174,50 @@ gotItButton.addEventListener('click', function() {
     infoBox.classList.add('hidden');
 });
 
+let inChallengeSettings = false;
+let selectedGroups = groups;
+let challengeGroups = selectedGroups
+
+settingsButton.addEventListener("click", function() {
+    scoreAnnouncementBox.classList.add('hidden'); 
+    challengeSettings.classList.toggle("hidden");
+    if (!inChallengeSettings) inChallengeSettings = true;
+    else {
+        selectedGroups = [];
+        groupCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedGroups.push(checkbox.value);
+            }
+        });
+        inChallengeSettings = false;
+    }
+});
+
+saveSettingsButton.addEventListener("click", function() {
+    selectedGroups = [];
+    groupCheckboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            selectedGroups.push(checkbox.value);
+        }
+    });
+    challengeSettings.classList.add("hidden");
+    inChallengeSettings = false;
+});
+
+
+window.addEventListener('resize', updateCanvasSize);
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateCanvasSize();
+    currentGroup = groups[Math.floor(Math.random() * groups.length)];
+    challengeInfoBox.classList.add('hidden');
+    setupAttributes();
+});
+
+
+document.querySelectorAll('.symmetry-button').forEach(button => {
+    button.addEventListener('click', () => handleSymmetryButtons(button.getAttribute('data-group')));
+});
 
 function updateCanvasSize() {
     canvas = document.getElementById('tessellationCanvas');
@@ -210,19 +259,6 @@ function updateCanvasSize() {
     }
 }
 
-window.addEventListener('resize', updateCanvasSize);
-
-document.addEventListener('DOMContentLoaded', () => {
-    updateCanvasSize();
-    currentGroup = groups[Math.floor(Math.random() * groups.length)];
-    challengeInfoBox.classList.add('hidden');
-    setupAttributes();
-});
-
-document.querySelectorAll('.symmetry-button').forEach(button => {
-    button.addEventListener('click', () => handleSymmetryButtons(button.getAttribute('data-group')));
-});
-
 let tileWidth = 0;
 let tileHeight = 0;
 let tileOverhang = 0;
@@ -231,7 +267,7 @@ function setupAttributes() {
     // randomize the image
     const randomImage = images[Math.floor(Math.random() * images.length)];
     if (guessingMode){
-        currentGroup = groups[Math.floor(Math.random() * groups.length)];
+        currentGroup = challengeGroups[Math.floor(Math.random() * challengeGroups.length)];
     }
     image = new Image();
 
@@ -1834,6 +1870,14 @@ let countdownInterval = null;
 function startChallenge() {
     
     fadeInElements();
+    if (inChallengeSettings) return;
+    if (selectedGroups.length < 2){
+        finalScoreText.textContent = `Select at least 2 groups!`;
+        scoreAnnouncementBox.classList.remove('hidden'); 
+        setTimeout(hideAnnouncementBox, 4000);
+        return;
+    }
+    challengeGroups = selectedGroups
 
     if (countdownInterval !== null) {
         clearInterval(countdownInterval);
@@ -1858,7 +1902,9 @@ function startChallenge() {
 
         // time over
         if (timeLeft <= 0) {
-            finalScoreText.textContent = `You scored ${challengeScore} points!`;
+            
+            finalScoreText.textContent = challengeGroups.length == 17 ? `You scored ${challengeScore} points!` :
+            `You scored ${challengeScore} points`;
             scoreAnnouncementBox.classList.remove('hidden'); 
             challengeInfoBox.classList.add('hidden');
             setTimeout(hideAnnouncementBox, 5000);
