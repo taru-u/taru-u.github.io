@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Snow</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="menu">
+        <label for="fpsInput">Target FPS: </label>
+        <input type="number" id="fpsInput" value="30" min="0" step="1">
+        <label for="pixelSizeInput">Pixel Size: </label>
+        <input type="number" id="pixelSizeInput" value="2" min="0" step="1">
+        <button id="updateButton">Update</button>
+    </div>
+
+    <canvas id="visualSnow"></canvas>
+    
+    <!-- FPS Counter -->
+    <div id="fpsCounter">FPS: 0</div>
+
+    <script src="script.js"></script>
+</body>
+</html>

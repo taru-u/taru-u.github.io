@@ -1,0 +1,52 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: black;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-pixelated;
+}
+
+#menu {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 10;
+    transition: opacity 0.5s ease-in-out; /* Smooth fade in/out */
+    opacity: 1; /* Initially fully visible */
+    justify-content: center; 
+}
+
+#menu.hidden {
+    opacity: 0; /* Fully invisible when hidden */
+}
+
+#menu label, #menu input, #menu button {
+    margin-right: 10px;
+}
+
+#menu input {
+    width: 50px;
+}
+
+#fpsCounter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: yellow;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* Black border */
+    z-index: 10;
+}
