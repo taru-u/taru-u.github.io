@@ -32,6 +32,14 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+function gaussianRand(n) {
+    var rand = 0;
+    for (var i = 0; i < n; i += 1) {
+      rand += Math.random();
+    }
+    return rand / n;
+  }
+
 function drawVisualSnow() {
     const width = canvas.width;
     const height = canvas.height;
@@ -39,11 +47,14 @@ function drawVisualSnow() {
     const pixels = imageData.data;
 
     for (let i = 0; i < pixels.length; i += 4) {
-        let randomValue = Math.random()
-        if (noiseType === 'gaussian') {
-            randomValue = Math.floor(randomValue * 256)
+        let randomValue
+        if (noiseType === 'grayscale') {
+            randomValue = Math.random() * 256
+        }
+        else if (noiseType === 'gaussian') {
+            randomValue = gaussianRand(5) * 256
         } else {
-            if (randomValue > 0.5 ) randomValue = 255
+            if (Math.random() > 0.5 ) randomValue = 255
             else randomValue = 0
         }
         pixels[i] = randomValue;     // Red
