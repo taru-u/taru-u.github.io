@@ -23,13 +23,12 @@ canvas {
     padding: 10px;
     border-radius: 5px;
     z-index: 10;
-    transition: opacity 0.5s ease-in-out; /* Smooth fade in/out */
-    opacity: 1; /* Initially fully visible */
-    justify-content: center; 
+    transition: opacity 0.5s ease-in-out; 
+    opacity: 1;
 }
 
 #menu.hidden {
-    opacity: 0; /* Fully invisible when hidden */
+    opacity: 0;
 }
 
 #menu label, #menu input, #menu button {
