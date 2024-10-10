@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Equidistant Dots with Drag-and-Drop</title>
+  <!-- Added viewport meta tag for mobile scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-color: #222;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      background-color: #333;
+    }
+    #controls input, #controls button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #444;
+      border: none;
+      border-radius: 5px;
+    }
+    #controls input {
+      width: 60px;
+      text-align: center;
+    }
+    #canvas {
+      flex-grow: 1;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="number" id="numDotsInput" value="10" min="3" max="1000">
+    <button onclick="startMovement()">Go</button>
+  </div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let numDots = 10;
+    const radius = 150;
+    const dots = [];
+    let animationRunning = false;
+    let highlightedDot = null;
+    let animationFrameId;
+    let draggingDot = null;
+    let touchIdentifier = null;
+
+    class Dot {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = 'hsl(120, 100%, 50%)';
+        this.targets = [];
+        this.isDragging = false;
+      }
+      draw(highlight = false) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        if (highlight) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'white';
+          ctx.stroke();
+        }
+      }
+      update() {
+        if (this.isDragging) {
+          return;
+        }
+
+        let totalForceX = 0;
+        let totalForceY = 0;
+
+        if (this.targets.length === 2) {
+          const [targetA, targetB] = this.targets;
+
+          const dxA = this.x - targetA.x;
+          const dyA = this.y - targetA.y;
+          const distanceA = Math.sqrt(dxA * dxA + dyA * dyA);
+
+          const dxB = this.x - targetB.x;
+          const dyB = this.y - targetB.y;
+          const distanceB = Math.sqrt(dxB * dxB + dyB * dyB);
+
+          const diff = distanceA - distanceB;
+
+          // Compute gradient to minimize the squared difference of distances
+          const gradX = 2 * diff * ((dxA / (distanceA || 1)) - (dxB / (distanceB || 1)));
+          const gradY = 2 * diff * ((dyA / (distanceA || 1)) - (dyB / (distanceB || 1)));
+
+          const gradMagnitude = Math.sqrt(gradX * gradX + gradY * gradY);
+
+          const forceScale = 0.1;
+
+          const dirAX = dxA / (distanceA || 1);
+          const dirAY = dyA / (distanceA || 1);
+          const dirBX = dxB / (distanceB || 1);
+          const dirBY = dyB / (distanceB || 1);
+
+          const dotProduct = dirAX * dirBX + dirAY * dirBY;
+
+          if (dotProduct > 0.9975) {
+            const accelerationScale = 0.005;
+            const accelX = accelerationScale * ((targetA.x - this.x) + (targetB.x - this.x));
+            const accelY = accelerationScale * ((targetA.y - this.y) + (targetB.y - this.y));
+            totalForceX += accelX;
+            totalForceY += accelY;
+          }
+
+          totalForceX -= gradX * forceScale;
+          totalForceY -= gradY * forceScale;
+        }
+
+        // Update position based on total force
+        this.x += totalForceX;
+        this.y += totalForceY;
+
+        // Apply repulsion from other dots to prevent overlap
+        this.repel();
+
+        // Boundary collision detection
+        const radius = 10;
+
+        // Left boundary
+        if (this.x < radius) {
+          this.x = radius;
+        }
+        // Right boundary
+        if (this.x > canvas.width - radius) {
+          this.x = canvas.width - radius;
+        }
+        // Top boundary
+        if (this.y < radius) {
+          this.y = radius;
+        }
+        // Bottom boundary
+        if (this.y > canvas.height - radius) {
+          this.y = canvas.height - radius;
+        }
+      }
+      repel() {
+        dots.forEach(otherDot => {
+          if (otherDot !== this && !otherDot.isDragging) {
+            const dx = otherDot.x - this.x;
+            const dy = otherDot.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 20) {
+              const angle = Math.atan2(dy, dx);
+              const repelForce = 0.1;
+              this.x -= Math.cos(angle) * repelForce;
+              this.y -= Math.sin(angle) * repelForce;
+            }
+          }
+        });
+      }
+      updateColor() {
+        if (this.targets.length === 2) {
+          const [targetA, targetB] = this.targets;
+          const distanceA = Math.sqrt((targetA.x - this.x) ** 2 + (targetA.y - this.y) ** 2);
+          const distanceB = Math.sqrt((targetB.x - this.x) ** 2 + (targetB.y - this.y) ** 2);
+          const ratio = distanceA / distanceB;
+          const maxDiff = 0.1;
+          const clampedDiff = Math.min(Math.abs(ratio - 1), maxDiff);
+
+          const hue = 360 - (120 * (1 - (clampedDiff / maxDiff)));
+          this.color = `hsl(${hue}, 100%, 50%)`;
+        }
+      }
+    }
+
+    function initializeDots(numDots) {
+      dots.length = 0;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      for (let i = 0; i < numDots; i++) {
+        const angle = (i / numDots) * (2 * Math.PI);
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        dots.push(new Dot(x, y));
+      }
+    }
+
+    function drawLineWithEndDot(fromX, fromY, toX, toY, color, lineWidth) {
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      const newToX = toX - (dx / length) * 15;
+      const newToY = toY - (dy / length) * 15;
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(newToX, newToY, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function drawDots(highlightedDot = null) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw connections between dots and their targets
+      dots.forEach(dot => {
+        dot.targets.forEach(target => {
+          let color = 'rgba(255, 255, 255, 0.2)';
+          let lineWidth = 1;
+
+          // Corrected highlight condition for connections
+          if (highlightedDot && dot === highlightedDot) {
+            // Only highlight connections originating from the highlighted dot
+            color = 'rgba(255, 255, 255, 0.8)';
+            lineWidth = 2;
+          }
+
+          drawLineWithEndDot(dot.x, dot.y, target.x, target.y, color, lineWidth);
+        });
+      });
+
+      // Draw the dots
+      dots.forEach(dot => {
+        let highlight = false;
+        if (highlightedDot) {
+          // Corrected highlight condition for dots
+          if (dot === highlightedDot || highlightedDot.targets.includes(dot)) {
+            highlight = true;
+          }
+        }
+        dot.draw(highlight);
+      });
+    }
+
+    function updateDots() {
+      dots.forEach(dot => {
+        dot.update();
+        dot.updateColor();
+      });
+    }
+
+    function startMovement() {
+      if (animationRunning) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
+      const numDotsInput = document.getElementById('numDotsInput');
+      numDots = parseInt(numDotsInput.value);
+      if (isNaN(numDots) || numDots < 3) {
+        numDots = 3;
+        numDotsInput.value = numDots;
+      }
+
+      initializeDots(numDots);
+
+      dots.forEach(dot => {
+        const availableTargets = dots.filter(otherDot => otherDot !== dot);
+        shuffleArray(availableTargets);
+        dot.targets = availableTargets.slice(0, 2);
+      });
+
+      animationRunning = true;
+      animate();
+    }
+
+    function animate() {
+      updateDots();
+      drawDots(highlightedDot);
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - document.getElementById('controls').offsetHeight;
+      if (!animationRunning) {
+        drawDots(highlightedDot);
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    canvas.addEventListener('mousedown', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      dots.forEach(dot => {
+        const dx = mouseX - dot.x;
+        const dy = mouseY - dot.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 10) {
+          draggingDot = dot;
+          dot.isDragging = true;
+          highlightedDot = dot; // Highlight the dot being dragged
+        }
+      });
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      if (draggingDot) {
+        draggingDot.x = mouseX;
+        draggingDot.y = mouseY;
+        highlightedDot = draggingDot; // Keep highlighting during drag
+      } else {
+        highlightedDot = null;
+        dots.forEach(dot => {
+          const dx = mouseX - dot.x;
+          const dy = mouseY - dot.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 10) {
+            highlightedDot = dot;
+          }
+        });
+        if (!animationRunning) {
+          drawDots(highlightedDot);
+        }
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (draggingDot) {
+        draggingDot.isDragging = false;
+        draggingDot = null;
+        highlightedDot = null; // Remove highlight after drag
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (draggingDot) {
+        draggingDot.isDragging = false;
+        draggingDot = null;
+        highlightedDot = null; // Remove highlight when mouse leaves canvas
+      }
+    });
+
+    // Touch event handlers for mobile support
+    canvas.addEventListener('touchstart', (event) => {
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = event.changedTouches[0];
+      const touchX = touch.clientX - rect.left;
+      const touchY = touch.clientY - rect.top;
+      dots.forEach(dot => {
+        const dx = touchX - dot.x;
+        const dy = touchY - dot.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 10) {
+          draggingDot = dot;
+          dot.isDragging = true;
+          touchIdentifier = touch.identifier;
+          highlightedDot = dot; // Highlight the dot being dragged
+        }
+      });
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (event) => {
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touchList = event.changedTouches;
+      for (let i = 0; i < touchList.length; i++) {
+        const touch = touchList[i];
+        if (touch.identifier === touchIdentifier) {
+          const touchX = touch.clientX - rect.left;
+          const touchY = touch.clientY - rect.top;
+          if (draggingDot) {
+            draggingDot.x = touchX;
+            draggingDot.y = touchY;
+            highlightedDot = draggingDot; // Keep highlighting during drag
+          }
+        }
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      if (draggingDot) {
+        draggingDot.isDragging = false;
+        draggingDot = null;
+        highlightedDot = null; // Remove highlight after drag
+        touchIdentifier = null;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', (event) => {
+      event.preventDefault();
+      if (draggingDot) {
+        draggingDot.isDragging = false;
+        draggingDot = null;
+        highlightedDot = null; // Remove highlight on touch cancel
+        touchIdentifier = null;
+      }
+    }, { passive: false });
+
+    // Initialize with default number of dots
+    initializeDots(numDots);
+    drawDots();
+  </script>
+</body>
+</html>
