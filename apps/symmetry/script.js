@@ -16,7 +16,7 @@ let guessingMode = false;
 let infoVisible = true;
 
 const images = ['001.webp','002.webp','003.webp','004.webp','005.webp','006.webp','007.webp','008.webp','009.webp',
-                '010.webp','011.webp','012.webp','013.webp'];
+                '010.webp','011.webp','012.webp','013.webp','014.webp'];
 const groups = ['p1', 'p2', 'pm', 'pg', 'pmm', 'pmg', 'p4', 'p4m', 'p4g', 'cm', 'cmm', 'pgg', 'p3', 'p3m1', 'p31m', 'p6', 'p6m'];
 
 const keyToButtonMap = {
@@ -43,6 +43,7 @@ const keyToButtonMap = {
 
 const challengeButton = document.getElementById('minute-challenge-button');
 const animationCheckbox = document.getElementById('animation-checkbox');
+const rotationCheckbox = document.getElementById('rotation-checkbox');
 const challengeInfoBox = document.getElementById('challenge-info-box');
 const timeLeftElement = document.getElementById('time-left');
 const currentScoreElement = document.getElementById('current-score');
@@ -59,6 +60,7 @@ const saveSettingsButton = document.getElementById("save-settings-button");
 const groupCheckboxes = document.querySelectorAll(".group-checkbox");
 
 let animate = true;
+let rotationEnabled = true;
 
 // preload images to reduce sudden lag
 function preloadImages(imageFilenames) {
@@ -155,12 +157,10 @@ document.addEventListener('touchstart', function(event) {
 
 challengeButton.addEventListener('click', startChallenge);
 animationCheckbox.addEventListener('change', function() {
-    if (animationCheckbox.checked) {
-        animate = true;
-        requestAnimationFrame(animateTessellation);
-    } else {
-        animate = false;
-    }
+    animate = this.checked;
+});
+rotationCheckbox.addEventListener('change', function() {
+    rotationEnabled = this.checked;
 });
 
 infoButton.addEventListener('click', function() {
@@ -319,11 +319,15 @@ function setupAttributes() {
     }
     image.onload = function () {
         // randomize rotation, rotation speed, image scroll speed, image initial coords
-        gridRotationAngle = Math.random() * 2 * Math.PI;
+        if (!rotationEnabled) {
+            gridRotationAngle = 0;
+        } else {
+            gridRotationAngle = Math.random() * 2 * Math.PI;
+        }
 
         vrot = 0;
         while (Math.abs(vrot) < 0.0007){
-            vrot = Math.random()*0.005 - 0.0025
+            vrot = Math.random()*0.004 - 0.002
         }
         
         x =  Math.floor(Math.random() * (image.width*0.75));
@@ -332,8 +336,8 @@ function setupAttributes() {
         vx = 0; 
         vy = 0; 
         while (Math.sqrt(vx**2 + vy**2) < 0.05){
-            vx = Math.random()*0.8 - 0.4
-            vy = Math.random()*0.8 - 0.4
+            vx = Math.random()*0.6 - 0.3
+            vy = Math.random()*0.6 - 0.3
         }
             requestAnimationFrame(animateTessellation);
     };
@@ -347,17 +351,17 @@ const frameDuration = 1000 / fps;
 function animateTessellation(timestamp) {
     const timeElapsed = timestamp - lastFrameTime;
     if (timeElapsed >= frameDuration) {
-
         lastFrameTime = timestamp;
-        x += vx;
-        y += vy;
-        gridRotationAngle += vrot;
-
+        if (animate) {
+            x += vx;
+            y += vy;
+        }
+        if (rotationEnabled) {
+            gridRotationAngle += vrot;
+        }
         tessellate(image, tileWidth, tileHeight, tileOverhang);
     }
-    if (animate){
-        requestAnimationFrame(animateTessellation);
-    }   
+    requestAnimationFrame(animateTessellation);
 }
 
 // get the number of rows and cols required to cover the canvas in all rotations
@@ -1824,12 +1828,21 @@ function drawImageWraparound(ctx, image,x,y,width,height,i,j,tilew,tileh){
 const correctSound = new Audio('sound/correct.wav');
 const incorrectSound = new Audio('sound/incorrect.wav');
 
+let lastGuessTime = 0;
+
 function handleSymmetryButtons(group) {
+    // in challenge mode, prevent two guesses within 0.2 seconds.
+    if (guessingMode) {
+        const currentTime = performance.now();
+        if (currentTime - lastGuessTime < 200) return;
+        lastGuessTime = currentTime;
+    }
+
     const correctButton = document.querySelector(`.symmetry-button[data-group="${currentGroup}"]`);
     const clickedButton = document.querySelector(`.symmetry-button[data-group="${group}"]`);
 
     // button behavior in 1 minute challenge
-    if (guessingMode){
+    if (guessingMode) {
         if (group === currentGroup) {
             challengeScore++;
             currentScoreElement.textContent = `${challengeScore} points`;
@@ -1838,7 +1851,7 @@ function handleSymmetryButtons(group) {
             correctSound.play();
             clickedButton.classList.add('correct-guess');
         } else {
-            challengeScore = Math.max(0, challengeScore-1);
+            challengeScore = Math.max(0, challengeScore - 1);
             currentScoreElement.textContent = `${challengeScore} points`;
             incorrectSound.pause();
             incorrectSound.currentTime = 0;
@@ -1852,7 +1865,7 @@ function handleSymmetryButtons(group) {
         }, 500);
 
         setupAttributes();
-        return
+        return;
     }
     // in default mode
     currentGroup = group;
