@@ -64,9 +64,13 @@
             <button id="minute-challenge-button">1 Minute Challenge</button>
         </div>
     </div>
-    <!-- 1 Minute Challenge Settings (Hidden by default) -->
+   <!-- 1 Minute Challenge Settings (Hidden by default) -->
     <div id="challenge-settings" class="hidden">
-        <h3>Challenge Settings</h3>
+        <h3>Settings</h3>
+        <div id="image-selection-container">
+            <button type="button" id="open-image-menu-button" class="texture-button">Select Texture</button>
+       </div>
+        <h4>Challenge Groups</h4>
         <form id="challenge-form">
             <div class="checkboxes">
                 <label><input type="checkbox" class="group-checkbox" value="p1" checked> p1</label>
@@ -89,6 +93,65 @@
             </div>
             <button type="button" id="save-settings-button">Done</button>
         </form>
+    </div>
+
+    <!-- Modal Popup for Texture Preview -->
+    <div id="texture-popup-menu" class="hidden">
+        <div class="popup-content">
+        <h4>Select Texture Background</h4>
+        <div class="texture-grid">
+            <div class="texture-option" data-value="001.webp">
+                <img src="images/001.webp" alt="001 texture">
+            </div>
+            <div class="texture-option" data-value="002.webp">
+                <img src="images/002.webp" alt="002 texture">
+            </div>
+            <div class="texture-option" data-value="003.webp">
+                <img src="images/003.webp" alt="003 texture">
+            </div>
+            <div class="texture-option" data-value="004.webp">
+                <img src="images/004.webp" alt="004 texture">
+            </div>
+            <div class="texture-option" data-value="005.webp">
+                <img src="images/005.webp" alt="005 texture">
+            </div>
+            <div class="texture-option" data-value="006.webp">
+                <img src="images/006.webp" alt="006 texture">
+            </div>
+            <div class="texture-option" data-value="007.webp">
+                <img src="images/007.webp" alt="007 texture">
+            </div>
+            <div class="texture-option" data-value="008.webp">
+                <img src="images/008.webp" alt="008 texture">
+            </div>
+            <div class="texture-option" data-value="009.webp">
+                <img src="images/009.webp" alt="009 texture">
+            </div>
+            <div class="texture-option" data-value="010.webp">
+                <img src="images/010.webp" alt="010 texture">
+            </div>
+            <div class="texture-option" data-value="011.webp">
+                <img src="images/011.webp" alt="011 texture">
+            </div>
+            <div class="texture-option" data-value="012.webp">
+                <img src="images/012.webp" alt="012 texture">
+            </div>
+            <div class="texture-option" data-value="013.webp">
+                <img src="images/013.webp" alt="013 texture">
+            </div>
+            <div class="texture-option" data-value="014.webp">
+                <img src="images/014.webp" alt="014 texture">
+            </div>
+            <div class="texture-option" data-value="random">
+                <p>Random</p>
+            </div>
+            <div class="texture-option" data-value="custom">
+               <p>Custom</p>
+            </div>
+        </div>
+        <button type="button" id="close-texture-popup" class="texture-button">Close Menu</button>
+        <input type="file" id="custom-image-input" accept="image/*" style="display:none;">
+        </div>
     </div>
     
     <!-- Info Box -->

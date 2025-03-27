@@ -344,6 +344,97 @@ canvas {
     background-color: rgb(22, 88, 37); 
 }
 
+#texture-popup-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+}
+.popup-content {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 80%;
+    max-height: 90%;
+    overflow: auto;
+    text-align: center;
+    color: white;
+}
+  
+.texture-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+    justify-content: center;
+}
+  
+.texture-option {
+    min-width: 100px;
+    border: 2px solid transparent;
+    padding: 5px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+  
+.texture-option img {
+    max-width: 100px;
+    max-height: 100px;
+    display: block;
+}
+  
+.texture-option p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.texture-option.selected {
+    border-color: #3498db;
+    background: rgba(255,255,255,0.2);
+}
+#open-image-menu-button {
+    margin: 10px 0;
+}
+
+#close-texture-popup {
+    margin-top: 10px;
+    background-color: rgb(95, 182, 95);
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+  
+#close-texture-popup:hover {
+    background-color: rgb(22, 88, 37);  
+}
+
+.texture-button {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    padding: 10px 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+    /* Additional styling similar to symmetry-button */
+    display: inline-block;
+    text-align: center;
+}
+.texture-button:hover {
+    background-color: #0056b3;
+}
+
 @media (max-width: 900px) {
     
     .control-container {
