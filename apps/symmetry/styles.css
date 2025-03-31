@@ -137,7 +137,7 @@ canvas {
 
 #challenge-settings {
     position: fixed;
-    bottom: 170px;
+    bottom: 25px;
     right: 20px;
     background-color: rgba(0, 0, 0, 0.8);
     padding: 15px;
@@ -425,9 +425,7 @@ canvas {
     font-size: 16px;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px;
     transition: background-color 0.3s;
-    /* Additional styling similar to symmetry-button */
     display: inline-block;
     text-align: center;
 }

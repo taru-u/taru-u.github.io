@@ -19,7 +19,7 @@ const images = ['001.webp','002.webp','003.webp','004.webp','005.webp','006.webp
                 '010.webp','011.webp','012.webp','013.webp','014.webp'];
 const groups = ['p1', 'p2', 'pm', 'pg', 'pmm', 'pmg', 'p4', 'p4m', 'p4g', 'cm', 'cmm', 'pgg', 'p3', 'p3m1', 'p31m', 'p6', 'p6m'];
 
-// Global variable for image selection; default is 'random'
+// global variable for image selection; default is 'random'
 let currentImageSelection = 'random';
 
 const keyToButtonMap = {
@@ -67,6 +67,8 @@ const openImageMenuButton = document.getElementById('open-image-menu-button');
 const imageSelectionMenu = document.getElementById('image-selection-menu');
 const imageSelectionDropdown = document.getElementById('image-selection-dropdown');
 const customImageInput = document.getElementById('custom-image-input');
+const exportButton = document.getElementById('export-button');
+const importButton = document.getElementById('import-button');
 
 openImageMenuButton.addEventListener('click', function() {
     texturePopupMenu.classList.remove('hidden');
@@ -111,11 +113,13 @@ function updateTextureSelectionHighlight() {
         document.querySelector('.texture-option[data-value="random"]').classList.add('selected');
     } else if (currentImageSelection.startsWith("data:")) {
         document.querySelector('.texture-option[data-value="custom"]').classList.add('selected');
+    } else if (currentImageSelection.startsWith("http:") || currentImageSelection.startsWith("https:") || currentImageSelection.startsWith("file:")) {
+        const filename = currentImageSelection.split('/').pop();
+        document.querySelector(`.texture-option[data-value="${filename}"]`)?.classList.add('selected');
     } else {
         document.querySelector(`.texture-option[data-value="${currentImageSelection}"]`)?.classList.add('selected');
     }
 }
-
 document.addEventListener('dragover', function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -140,6 +144,55 @@ document.addEventListener('drop', function(e) {
 
 let animationEnabled = true;
 let rotationEnabled = true;
+
+exportButton.addEventListener('click', () => {
+    const state = {
+        currentImage: image && image.src ? image.src : currentImageSelection,
+        animationEnabled: animationEnabled,
+        rotationEnabled: rotationEnabled,
+        x: x,
+        y: y,
+        vx: vx,
+        vy: vy,
+        vrot: vrot,
+        gridRotationAngle: gridRotationAngle,
+        tileWidth: tileWidth,
+        tileHeight: tileHeight,
+        tileOverhang: tileOverhang,
+        currentGroup: currentGroup
+    };
+    const stateJSON = JSON.stringify(state);
+    navigator.clipboard.writeText(stateJSON)
+        .then(() => alert("State exported to clipboard!"))
+        .catch(err => alert("Failed to export state: " + err));
+});
+
+importButton.addEventListener('click', () => {
+    const stateJSON = prompt("Paste the exported state:");
+    if (!stateJSON) return;
+    try {
+        const state = JSON.parse(stateJSON);
+        currentImageSelection = state.currentImage;
+        animationEnabled = state.animationEnabled;
+        rotationEnabled = state.rotationEnabled;
+        x = state.x;
+        y = state.y;
+        vx = state.vx;
+        vy = state.vy;
+        vrot = state.vrot;
+        gridRotationAngle = state.gridRotationAngle;
+        tileWidth = state.tileWidth;
+        tileHeight = state.tileHeight;
+        tileOverhang = state.tileOverhang;
+        currentGroup = state.currentGroup;
+        animationCheckbox.checked = animationEnabled;
+        rotationCheckbox.checked = rotationEnabled;
+        updateTextureSelectionHighlight();
+        setupAttributes(true); // Preserve imported parameters
+    } catch (e) {
+        alert("Failed to import state: " + e.message);
+    }
+});
 
 // preload images to reduce sudden lag
 function preloadImages(imageFilenames) {
@@ -335,10 +388,10 @@ let tileWidth = 0;
 let tileHeight = 0;
 let tileOverhang = 0;
 
-function setupAttributes() {
+function setupAttributes(useImported = false) {
     // Determine the image to use based on the current selection.
     let chosenImage;
-    if (currentImageSelection === 'random') {
+    if (currentImageSelection === 'random' && !useImported) {
         chosenImage = images[Math.floor(Math.random() * images.length)];
     } else {
         chosenImage = currentImageSelection;
@@ -346,80 +399,83 @@ function setupAttributes() {
     
     image = new Image();
     
-    if (guessingMode){
+    if (!useImported && guessingMode){
         currentGroup = challengeGroups[Math.floor(Math.random() * challengeGroups.length)];
     }
     
+    if (!useImported) {
     // randomize the tile size and possibly shape
-    if (currentGroup == 'p1' || currentGroup == 'p2'){
-        tileWidth = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
-        tileHeight = tileWidth;
-        tileOverhang = 0;
-        if (Math.random() < 0.7){
-            tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random()* 80;
+        if (currentGroup == 'p1' || currentGroup == 'p2'){
+            tileWidth = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
+            tileHeight = tileWidth;
+            tileOverhang = 0;
             if (Math.random() < 0.7){
-                tileOverhang = Math.random() * (tileWidth/2);
+                tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random()* 80;
+                if (Math.random() < 0.7){
+                    tileOverhang = Math.random() * (tileWidth/2);
+                }
             }
         }
-    }
-    else if (currentGroup == 'pm' || currentGroup == 'pg'){
-        tileWidth = Math.max(canvasdiag*0.075, 100) + Math.random() *  100;
-        tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
-    }
-    else if (currentGroup == 'pmg'|| currentGroup == 'pmm'){
-        tileWidth = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
-        tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() *  100;
-    }
-    else if (currentGroup == 'cm' || currentGroup == 'cmm'){
-        tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() * 100;
-        tileHeight = Math.max(canvasdiag*0.045, 60) + Math.random()* 50;
-    }
-    else if (currentGroup == 'pgg'){
-        tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() *  100;
-        tileHeight = Math.max(canvasdiag*0.075, 100) + Math.random()* 130;
-    }
-    else if (currentGroup == 'p4' || currentGroup == 'p4m' || currentGroup == 'p4g'){
-        tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() * 80;
-        tileHeight = tileWidth;
-    }
-    else if (currentGroup == 'p3'){
-        tileHeight = Math.max(canvasdiag*0.038, 50) + Math.random() *  50;
-        tileWidth = Math.sqrt(3)/2*tileHeight;
-        colwidth = tileWidth*2;
-        rowheight = tileHeight *1.5;
-        tilesizemulti = 1.5;
-    }
-    else if ( currentGroup == 'p31m' || currentGroup == 'p3m1' || currentGroup == 'p6' || currentGroup == 'p6m'){
-        tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() * 50;
-        tileWidth = Math.sqrt(3)/2*tileHeight;
-        colwidth = tileWidth*2;
-        rowheight = tileHeight *1.5;
-        tilesizemulti = 1.5;
+        else if (currentGroup == 'pm' || currentGroup == 'pg'){
+            tileWidth = Math.max(canvasdiag*0.075, 100) + Math.random() *  100;
+            tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
+        }
+        else if (currentGroup == 'pmg'|| currentGroup == 'pmm'){
+            tileWidth = Math.max(canvasdiag*0.06, 80) + Math.random() *  80;
+            tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() *  100;
+        }
+        else if (currentGroup == 'cm' || currentGroup == 'cmm'){
+            tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() * 100;
+            tileHeight = Math.max(canvasdiag*0.045, 60) + Math.random()* 50;
+        }
+        else if (currentGroup == 'pgg'){
+            tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() *  100;
+            tileHeight = Math.max(canvasdiag*0.075, 100) + Math.random()* 130;
+        }
+        else if (currentGroup == 'p4' || currentGroup == 'p4m' || currentGroup == 'p4g'){
+            tileWidth = Math.max(canvasdiag*0.09, 120) + Math.random() * 80;
+            tileHeight = tileWidth;
+        }
+        else if (currentGroup == 'p3'){
+            tileHeight = Math.max(canvasdiag*0.038, 50) + Math.random() *  50;
+            tileWidth = Math.sqrt(3)/2*tileHeight;
+            colwidth = tileWidth*2;
+            rowheight = tileHeight *1.5;
+            tilesizemulti = 1.5;
+        }
+        else if ( currentGroup == 'p31m' || currentGroup == 'p3m1' || currentGroup == 'p6' || currentGroup == 'p6m'){
+            tileHeight = Math.max(canvasdiag*0.06, 80) + Math.random() * 50;
+            tileWidth = Math.sqrt(3)/2*tileHeight;
+            colwidth = tileWidth*2;
+            rowheight = tileHeight *1.5;
+            tilesizemulti = 1.5;
+        }
     }
     image.onload = function () {
-        if (!rotationEnabled) {
-            gridRotationAngle = 0;
-        } else {
-            gridRotationAngle = Math.random() * 2 * Math.PI;
-        }
-
-        vrot = 0;
-        while (Math.abs(vrot) < 0.0007){
-            vrot = Math.random()*0.004 - 0.002;
-        }
-        
-        x =  Math.floor(Math.random() * (image.width*0.75));
-        y =  Math.floor( Math.random() * (image.height*0.75));
-
-        vx = 0; 
-        vy = 0; 
-        while (Math.sqrt(vx**2 + vy**2) < 0.05){
-            vx = Math.random()*0.6 - 0.3;
-            vy = Math.random()*0.6 - 0.3;
+        if (!useImported) {
+            if (!rotationEnabled) {
+                gridRotationAngle = 0;
+            } else {
+                gridRotationAngle = Math.random() * 2 * Math.PI;
+            }
+            vrot = 0;
+            while (Math.abs(vrot) < 0.0007) {
+                vrot = Math.random() * 0.004 - 0.002;
+            }
+            x = Math.floor(Math.random() * (image.width * 0.75));
+            y = Math.floor(Math.random() * (image.height * 0.75));
+            vx = 0;
+            vy = 0;
+            while (Math.sqrt(vx ** 2 + vy ** 2) < 0.05) {
+                vx = Math.random() * 0.6 - 0.3;
+                vy = Math.random() * 0.6 - 0.3;
+            }
         }
         requestAnimationFrame(animationEnabledTessellation);
     };
-    image.src = chosenImage.startsWith("data:") ? chosenImage : imageFolder + chosenImage;
+    image.src = (chosenImage.startsWith("data:") || chosenImage.startsWith("http") || chosenImage.startsWith("file:"))
+        ? chosenImage
+        : imageFolder + chosenImage;
 }
 
 let lastFrameTime = 0;
