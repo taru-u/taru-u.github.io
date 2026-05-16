@@ -1,0 +1,2374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two Tone Drift</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f17;
+      --panel: #151b26;
+      --panel-soft: #1b2331;
+      --ink: #edf2f7;
+      --muted: #9aa8bb;
+      --line: #2b3545;
+      --blue: #62a2ff;
+      --green: #4cc38a;
+      --red: #ff6b63;
+      --amber: #f4bf54;
+      --canvas: #080d15;
+      --canvas-soft: #111827;
+      --shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 20px 0 28px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.55rem, 2.1vw, 2.45rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .readout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .pill {
+      min-width: 92px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(280px, 390px) 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .transport {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .button {
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #07111f;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button.secondary {
+      background: var(--panel-soft);
+      border-color: var(--line);
+      color: var(--ink);
+    }
+
+    .button.secondary:hover {
+      background: #222c3b;
+    }
+
+    .button.warn {
+      background: var(--red);
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+      transform: none;
+    }
+
+    .parameter-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(112px, 1fr));
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.79rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .field select,
+    .field input[type="text"],
+    .field input[type="number"],
+    .field input[type="range"] {
+      width: 100%;
+    }
+
+    .field select,
+    .field input[type="text"],
+    .field input[type="number"] {
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #0f1520;
+      color: var(--ink);
+      padding: 0 9px;
+    }
+
+    .field input[type="range"] {
+      accent-color: var(--blue);
+    }
+
+    .range-value {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: right;
+    }
+
+    .check-field {
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-transform: none;
+    }
+
+    .check-label input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--green);
+    }
+
+    .pause-panel {
+      display: grid;
+      grid-template-columns: minmax(170px, 210px) minmax(110px, 150px) minmax(150px, 190px) minmax(90px, 130px) minmax(110px, 150px) minmax(240px, 340px) 1fr;
+      gap: 10px;
+      align-items: end;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ratio-entry {
+      display: grid;
+      grid-template-columns: 1fr 76px;
+      gap: 8px;
+    }
+
+    .ratio-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: end;
+      gap: 6px;
+      min-height: 38px;
+    }
+
+    .ratio-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 31px;
+      padding: 4px 7px 4px 10px;
+      border: 1px solid rgba(244, 191, 84, 0.55);
+      border-radius: 8px;
+      background: rgba(244, 191, 84, 0.13);
+      color: #ffe2a3;
+      font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    .chip-remove {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #ffe2a3;
+      cursor: pointer;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .chip-remove:hover {
+      background: rgba(244, 191, 84, 0.22);
+    }
+
+    input.invalid {
+      border-color: var(--red) !important;
+    }
+
+    .tone-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .tone-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(120px, 160px);
+      gap: 10px;
+      padding: 12px;
+      align-items: end;
+    }
+
+    .tone-title {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .tone-title h2 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .swatch-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .swatch {
+      width: 20px;
+      height: 8px;
+      border-radius: 8px;
+      background: var(--blue);
+    }
+
+    .swatch.green {
+      background: var(--green);
+    }
+
+    .swatch.red {
+      background: var(--red);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(360px, 1fr));
+      grid-template-areas:
+        "curve curve"
+        "wave spec";
+      gap: 14px;
+    }
+
+    .visual {
+      overflow: hidden;
+    }
+
+    .visual.wave {
+      grid-area: wave;
+    }
+
+    .visual.curve {
+      grid-area: curve;
+      position: relative;
+    }
+
+    .visual.spec {
+      grid-area: spec;
+    }
+
+    .visual-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      padding: 10px 12px 0;
+    }
+
+    .visual-head h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .visual-head span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-align: right;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 280px;
+    }
+
+    .visual.curve canvas {
+      height: 360px;
+      cursor: pointer;
+    }
+
+    .interval-display {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 2px 12px 4px;
+      color: #f7f8fb;
+      background: var(--canvas);
+    }
+
+    .interval-display strong {
+      font-size: clamp(2rem, 4.4vw, 4.75rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+      font-weight: 800;
+    }
+
+    .interval-display span {
+      color: #b8c1d2;
+      font-size: clamp(1rem, 1.5vw, 1.35rem);
+      white-space: nowrap;
+    }
+
+    .curve-tooltip {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 10px));
+      padding: 6px 8px;
+      border: 1px solid rgba(251, 191, 36, 0.7);
+      border-radius: 7px;
+      background: rgba(16, 20, 31, 0.94);
+      color: #fff8e5;
+      font-size: 0.82rem;
+      line-height: 1.15;
+      white-space: nowrap;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .curve-tooltip.visible {
+      opacity: 1;
+    }
+
+    .visual.spec canvas {
+      height: 280px;
+    }
+
+    .bar {
+      height: 10px;
+      margin: 0 12px 12px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #0f1520;
+    }
+
+    .bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue), var(--red));
+      transition: width 80ms linear;
+    }
+
+    @media (max-width: 1100px) {
+      .controls,
+      .tone-grid,
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        grid-template-areas:
+          "curve"
+          "wave"
+          "spec";
+      }
+
+      .parameter-grid {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+      }
+
+      .pause-panel {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .app {
+        width: min(100vw - 20px, 1480px);
+        padding-top: 12px;
+      }
+
+      header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .readout {
+        justify-content: stretch;
+      }
+
+      .pill {
+        flex: 1 1 128px;
+      }
+
+      .parameter-grid,
+      .pause-panel,
+      .tone-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .ratio-entry {
+        grid-template-columns: 1fr;
+      }
+
+      .transport {
+        grid-template-columns: 1fr;
+      }
+
+      canvas,
+      .visual.spec canvas {
+        height: 250px;
+      }
+
+      .visual.curve canvas {
+        height: 300px;
+      }
+
+      .interval-display {
+        flex-wrap: wrap;
+        gap: 4px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Two Tone Drift</h1>
+    </header>
+
+    <section class="controls" aria-label="Playback controls">
+      <div class="panel transport">
+        <button class="button" id="startButton" type="button">Start</button>
+        <button class="button secondary" id="restartButton" type="button">Restart</button>
+        <button class="button secondary" id="pauseRiseButton" type="button" disabled>Pause Rise</button>
+        <button class="button warn" id="stopButton" type="button" disabled>Stop</button>
+      </div>
+
+      <div class="panel parameter-grid">
+        <div class="field">
+          <label for="baseFrequency">Base Hz</label>
+          <input id="baseFrequency" type="number" min="40" max="1200" step="1" value="220">
+        </div>
+        <div class="field">
+          <label for="sweepSpeed">Speed c/s</label>
+          <input id="sweepSpeed" type="number" min="1" max="2400" step="0.1" value="10">
+        </div>
+        <div class="field">
+          <label for="octaveCount">Octaves</label>
+          <input id="octaveCount" type="number" min="1" max="6" step="1" value="2">
+        </div>
+        <div class="field">
+          <label for="masterGain">Level</label>
+          <input id="masterGain" type="range" min="0" max="0.75" step="0.01" value="0.22">
+          <div class="range-value" id="gainReadout">0.22</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel pause-panel" aria-label="Pause settings">
+      <div class="field check-field">
+        <label class="check-label" for="consonanceHold">
+          <input id="consonanceHold" type="checkbox">
+          <span>Enable Pauses</span>
+        </label>
+      </div>
+      <div class="field">
+        <label for="pauseSeconds">Pause Sec</label>
+        <input id="pauseSeconds" type="number" min="0" max="20" step="0.1" value="2">
+      </div>
+      <div class="field">
+        <label for="pauseSource">Pause Source</label>
+        <select id="pauseSource">
+          <option value="local">Local Optima</option>
+          <option value="tet">TET Notes</option>
+          <option value="reduced" selected>Reduced Ratios</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tetCount">TET</label>
+        <input id="tetCount" type="number" min="1" max="2400" step="1" value="12">
+      </div>
+      <div class="field">
+        <label for="reducedRatioCount">Ratio Count</label>
+        <input id="reducedRatioCount" type="number" min="1" max="500" step="1" value="24">
+      </div>
+      <form class="field ratio-entry" id="ratioForm">
+        <div>
+          <label for="ratioInput">Custom Ratio / Cents</label>
+          <input id="ratioInput" type="text" inputmode="decimal" placeholder="3:2, 5:4, 1.5, 386c">
+        </div>
+        <button class="button secondary" type="submit">Add</button>
+      </form>
+      <div class="ratio-list" id="ratioList" aria-label="Custom ratios"></div>
+    </section>
+
+    <section class="tone-grid" aria-label="Tone controls">
+      <div class="panel tone-panel">
+        <div class="tone-title">
+          <h2>Tone A Fixed</h2>
+          <div class="swatch-row" aria-hidden="true">
+            <span class="swatch green"></span>
+            <span class="swatch green"></span>
+            <span class="swatch green"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="waveA">Wave</label>
+          <select id="waveA"></select>
+        </div>
+        <div class="field">
+          <label for="toneAGain">Mix</label>
+          <input id="toneAGain" type="range" min="0" max="1" step="0.01" value="0.5">
+          <div class="range-value" id="toneAGainReadout">0.50</div>
+        </div>
+        <div class="field">
+          <label for="panA">Pan</label>
+          <input id="panA" type="range" min="-1" max="1" step="0.01" value="-0.12">
+          <div class="range-value" id="panAReadout">-0.12</div>
+        </div>
+      </div>
+
+      <div class="panel tone-panel">
+        <div class="tone-title">
+          <h2>Tone B Rising</h2>
+          <div class="swatch-row" aria-hidden="true">
+            <span class="swatch red"></span>
+            <span class="swatch red"></span>
+            <span class="swatch red"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="waveB">Wave</label>
+          <select id="waveB"></select>
+        </div>
+        <div class="field">
+          <label for="toneBGain">Mix</label>
+          <input id="toneBGain" type="range" min="0" max="1" step="0.01" value="0.5">
+          <div class="range-value" id="toneBGainReadout">0.50</div>
+        </div>
+        <div class="field">
+          <label for="panB">Pan</label>
+          <input id="panB" type="range" min="-1" max="1" step="0.01" value="0.12">
+          <div class="range-value" id="panBReadout">0.12</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Visualizers">
+      <div class="panel visual wave">
+        <div class="visual-head">
+          <h2>Current Waveform</h2>
+          <span id="waveformMeta">combined output</span>
+        </div>
+        <canvas id="waveformCanvas"></canvas>
+      </div>
+
+      <div class="panel visual curve">
+        <div class="visual-head">
+          <h2>Dissonance Curve</h2>
+          <span id="curveMeta">0 to selected range</span>
+        </div>
+        <div class="interval-display" aria-live="polite">
+          <strong id="bigRatioReadout">1.000:1</strong>
+          <span id="bigCentsReadout">0 cents</span>
+        </div>
+        <canvas id="curveCanvas"></canvas>
+        <div class="curve-tooltip" id="curveTooltip" role="tooltip"></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" id="progressBar"></div></div>
+      </div>
+
+      <div class="panel visual spec">
+        <div class="visual-head">
+          <h2>Spectrogram Feed</h2>
+          <span id="spectrogramMeta">live frequency energy</span>
+        </div>
+        <canvas id="spectrogramCanvas"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const audio = {
+        ctx: null,
+        master: null,
+        analyser: null,
+        waveAnalyser: null,
+        oscA: null,
+        oscB: null,
+        gainA: null,
+        gainB: null,
+        panA: null,
+        panB: null,
+        startedAt: 0,
+        rampStart: 0,
+        rampEnd: 0,
+        active: false,
+        risePaused: false,
+        pausedCents: 0,
+        sweepPlan: null,
+        periodics: new Map()
+      };
+
+      const controls = {
+        startButton: $("startButton"),
+        restartButton: $("restartButton"),
+        pauseRiseButton: $("pauseRiseButton"),
+        stopButton: $("stopButton"),
+        baseFrequency: $("baseFrequency"),
+        sweepSpeed: $("sweepSpeed"),
+        octaveCount: $("octaveCount"),
+        consonanceHold: $("consonanceHold"),
+        pauseSeconds: $("pauseSeconds"),
+        pauseSource: $("pauseSource"),
+        tetCount: $("tetCount"),
+        reducedRatioCount: $("reducedRatioCount"),
+        ratioForm: $("ratioForm"),
+        ratioInput: $("ratioInput"),
+        ratioList: $("ratioList"),
+        masterGain: $("masterGain"),
+        waveA: $("waveA"),
+        waveB: $("waveB"),
+        toneAGain: $("toneAGain"),
+        toneBGain: $("toneBGain"),
+        panA: $("panA"),
+        panB: $("panB")
+      };
+
+      const readouts = {
+        bigRatio: $("bigRatioReadout"),
+        bigCents: $("bigCentsReadout"),
+        gain: $("gainReadout"),
+        toneAGain: $("toneAGainReadout"),
+        toneBGain: $("toneBGainReadout"),
+        panA: $("panAReadout"),
+        panB: $("panBReadout"),
+        curveMeta: $("curveMeta"),
+        curveTooltip: $("curveTooltip"),
+        waveformMeta: $("waveformMeta"),
+        spectrogramMeta: $("spectrogramMeta"),
+        progressBar: $("progressBar")
+      };
+
+      const canvases = {
+        waveform: $("waveformCanvas"),
+        spectrogram: $("spectrogramCanvas"),
+        curve: $("curveCanvas")
+      };
+
+      const ctxs = {
+        waveform: canvases.waveform.getContext("2d"),
+        spectrogram: canvases.spectrogram.getContext("2d", { willReadFrequently: true }),
+        curve: canvases.curve.getContext("2d")
+      };
+
+      const waveShapes = [
+        {
+          id: "sine",
+          label: "Sine",
+          native: "sine",
+          partials: [[1, 1]]
+        },
+        {
+          id: "triangle",
+          label: "Triangle",
+          native: "triangle",
+          partials: oddPartials(15, (n) => 1 / (n * n))
+        },
+        {
+          id: "square",
+          label: "Square",
+          native: "square",
+          partials: oddPartials(25, (n) => 1 / n)
+        },
+        {
+          id: "sawtooth",
+          label: "Sawtooth",
+          native: "sawtooth",
+          partials: harmonicPartials(28, (n) => 1 / n)
+        },
+        {
+          id: "softOrgan",
+          label: "Soft Organ",
+          partials: [[1, 1], [2, 0.34], [3, 0.7], [4, 0.18], [5, 0.32], [6, 0.1], [8, 0.08]]
+        },
+        {
+          id: "hollow",
+          label: "Hollow",
+          partials: [[1, 1], [3, 0.72], [5, 0.42], [7, 0.22], [9, 0.12], [11, 0.07]]
+        },
+        {
+          id: "brightSynth",
+          label: "Bright Synth",
+          partials: [[1, 1], [2, 0.7], [3, 0.5], [4, 0.38], [5, 0.24], [6, 0.2], [7, 0.13], [8, 0.1], [10, 0.06], [12, 0.035]]
+        },
+        {
+          id: "glass",
+          label: "Glass",
+          partials: [[1, 1], [2, 0.08], [3, 0.32], [5, 0.48], [7, 0.18], [10, 0.08], [13, 0.04]]
+        }
+      ];
+
+      const waveShapeMap = new Map(waveShapes.map((shape) => [shape.id, normalizeShape(shape)]));
+      const visualization = {
+        timeData: null,
+        freqData: null,
+        curvePoints: [],
+        curveDirty: true,
+        previewCents: 0,
+        spectrogramReady: false,
+        spectrogramLastTime: 0,
+        spectrogramPixelCarry: 0,
+        lastFrame: 0
+      };
+
+      const WAVEFORM_ANCHOR_CYCLES = 4;
+      const DISSONANCE_CENTS_SCALE = 600;
+      const SPECTROGRAM_FFT_SIZE = 4096;
+      const SPECTROGRAM_MAX_HZ = 12000;
+      const SPECTROGRAM_HISTORY_SECONDS = 60;
+      const SPECTROGRAM_LABEL_RATIOS = [1, 2, 4, 8, 16, 32, 64];
+      const customRatios = [];
+
+      function oddPartials(max, ampFn) {
+        const partials = [];
+        for (let n = 1; n <= max; n += 2) partials.push([n, ampFn(n)]);
+        return partials;
+      }
+
+      function harmonicPartials(max, ampFn) {
+        const partials = [];
+        for (let n = 1; n <= max; n += 1) partials.push([n, ampFn(n)]);
+        return partials;
+      }
+
+      function normalizeShape(shape) {
+        const maxAmp = Math.max(...shape.partials.map((partial) => partial[1]));
+        return {
+          ...shape,
+          partials: shape.partials.map(([multiple, amplitude]) => [multiple, amplitude / maxAmp])
+        };
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function getNumber(input, fallback, min, max) {
+        const value = Number.parseFloat(input.value);
+        if (!Number.isFinite(value)) return fallback;
+        return clamp(value, min, max);
+      }
+
+      function centsFromRatio(ratio) {
+        return 1200 * Math.log2(ratio);
+      }
+
+      function ratioFromCents(cents) {
+        return 2 ** (cents / 1200);
+      }
+
+      function sweepOctaves() {
+        return Math.round(getNumber(controls.octaveCount, 2, 1, 6));
+      }
+
+      function maxSweepCents() {
+        return sweepOctaves() * 1200;
+      }
+
+      function maxSweepRatio() {
+        return 2 ** sweepOctaves();
+      }
+
+      function tetDivisionCount() {
+        return Math.round(getNumber(controls.tetCount, 12, 1, 2400));
+      }
+
+      function reducedRatioCountDefault() {
+        return 12 * sweepOctaves();
+      }
+
+      function syncReducedRatioDefault() {
+        const expected = reducedRatioCountDefault();
+        if (!controls.reducedRatioCount.dataset.userEdited) {
+          controls.reducedRatioCount.value = String(expected);
+        }
+      }
+
+      function spectrogramMinHz() {
+        return getNumber(controls.baseFrequency, 220, 40, 1200);
+      }
+
+      function spectrogramMaxHz() {
+        return audio.ctx ? Math.min(SPECTROGRAM_MAX_HZ, audio.ctx.sampleRate / 2) : SPECTROGRAM_MAX_HZ;
+      }
+
+      function frequencyToSpectrogramY(freq, height) {
+        const minHz = spectrogramMinHz();
+        const maxHz = spectrogramMaxHz();
+        const safeFreq = clamp(freq, minHz, maxHz);
+        const fraction = Math.log(safeFreq / minHz) / Math.log(maxHz / minHz);
+        return height - fraction * height;
+      }
+
+      function spectrogramYToFrequency(y, height) {
+        const minHz = spectrogramMinHz();
+        const maxHz = spectrogramMaxHz();
+        const fraction = 1 - y / Math.max(1, height - 1);
+        return minHz * (maxHz / minHz) ** fraction;
+      }
+
+      function fillWaveOptions() {
+        for (const select of [controls.waveA, controls.waveB]) {
+          select.innerHTML = "";
+          for (const shape of waveShapes) {
+            const option = document.createElement("option");
+            option.value = shape.id;
+            option.textContent = shape.label;
+            select.appendChild(option);
+          }
+        }
+        controls.waveA.value = "sawtooth";
+        controls.waveB.value = "sawtooth";
+      }
+
+      function ensureAudio() {
+        if (audio.ctx) return;
+
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        audio.ctx = new AudioCtor();
+        audio.master = audio.ctx.createGain();
+        audio.waveAnalyser = audio.ctx.createAnalyser();
+        audio.analyser = audio.ctx.createAnalyser();
+        audio.waveAnalyser.fftSize = 32768;
+        audio.waveAnalyser.smoothingTimeConstant = 0;
+        audio.analyser.fftSize = SPECTROGRAM_FFT_SIZE;
+        audio.analyser.smoothingTimeConstant = 0.72;
+        audio.master.gain.value = Number(controls.masterGain.value);
+        audio.master.connect(audio.waveAnalyser);
+        audio.waveAnalyser.connect(audio.analyser);
+        audio.analyser.connect(audio.ctx.destination);
+        buildPeriodicWaves();
+        resizeCanvases();
+      }
+
+      function buildPeriodicWaves() {
+        if (!audio.ctx) return;
+        audio.periodics.clear();
+        for (const shape of waveShapeMap.values()) {
+          if (shape.native) continue;
+          const max = Math.max(...shape.partials.map((partial) => partial[0]));
+          const real = new Float32Array(max + 1);
+          const imag = new Float32Array(max + 1);
+          for (const [multiple, amplitude] of shape.partials) imag[multiple] = amplitude;
+          audio.periodics.set(shape.id, audio.ctx.createPeriodicWave(real, imag, { disableNormalization: false }));
+        }
+      }
+
+      function setOscillatorWave(oscillator, waveId) {
+        const shape = waveShapeMap.get(waveId) || waveShapeMap.get("sine");
+        if (shape.native) {
+          oscillator.type = shape.native;
+        } else {
+          oscillator.setPeriodicWave(audio.periodics.get(shape.id));
+        }
+      }
+
+      function startSweep(resetSpectrogram = true, startCents = null, skipInitialPause = false) {
+        ensureAudio();
+        if (audio.ctx.state === "suspended") audio.ctx.resume();
+        const resolvedStartCents = startCents === null && audio.active
+          ? currentSweepCents()
+          : startCents === null
+            ? visualization.previewCents
+            : startCents;
+        stopSweep(false);
+
+        const base = getNumber(controls.baseFrequency, 220, 40, 1200);
+        const initialCents = clamp(resolvedStartCents, 0, maxSweepCents());
+        const centsPerSecond = getNumber(controls.sweepSpeed, 10, 1, 2400);
+        const pauseSeconds = getNumber(controls.pauseSeconds, 2, 0, 20);
+        const now = audio.ctx.currentTime + 0.03;
+        const plan = buildSweepPlan(
+          base,
+          now,
+          centsPerSecond,
+          controls.consonanceHold.checked,
+          pauseSeconds,
+          initialCents,
+          skipInitialPause
+        );
+
+        audio.gainA = audio.ctx.createGain();
+        audio.gainB = audio.ctx.createGain();
+        audio.panA = createPanNode(Number(controls.panA.value));
+        audio.panB = createPanNode(Number(controls.panB.value));
+        audio.oscA = audio.ctx.createOscillator();
+        audio.oscB = audio.ctx.createOscillator();
+
+        setOscillatorWave(audio.oscA, controls.waveA.value);
+        setOscillatorWave(audio.oscB, controls.waveB.value);
+
+        audio.oscA.frequency.setValueAtTime(base, now);
+        scheduleSweepFrequency(audio.oscB.frequency, plan);
+
+        audio.gainA.gain.setValueAtTime(Number(controls.toneAGain.value), now);
+        audio.gainB.gain.setValueAtTime(Number(controls.toneBGain.value), now);
+
+        connectTone(audio.oscA, audio.gainA, audio.panA);
+        connectTone(audio.oscB, audio.gainB, audio.panB);
+        audio.oscA.start(now);
+        audio.oscB.start(now);
+
+        audio.startedAt = now;
+        audio.rampStart = plan.rampStart;
+        audio.rampEnd = plan.rampEnd;
+        audio.sweepPlan = plan;
+        audio.active = true;
+        audio.risePaused = false;
+        audio.pausedCents = 0;
+        visualization.previewCents = initialCents;
+        if (resetSpectrogram) clearSpectrogram();
+        updateTransportState();
+      }
+
+      function buildSweepPlan(base, startAt, centsPerSecond, pauseEnabled, pauseSeconds, startCents = 0, skipInitialPause = false) {
+        if (visualization.curveDirty) buildDissonanceCurve();
+
+        const maxCents = maxSweepCents();
+        const initialCents = clamp(startCents, 0, maxCents);
+        let cursor = startAt;
+        const pauseSource = controls.pauseSource.value;
+        const holds = pauseEnabled ? getSelectedHoldStops() : [];
+        const remainingHolds = holds.filter((cents) => cents > initialCents + 0.5);
+        const usesHolds = pauseEnabled && pauseSeconds > 0 && initialCents < maxCents - 0.5;
+        const waypoints = [initialCents, ...remainingHolds, maxCents];
+        const events = [];
+
+        if (usesHolds && !skipInitialPause && initialCents < maxCents - 0.5) {
+          events.push({
+            type: "hold",
+            start: cursor,
+            end: cursor + pauseSeconds,
+            cents: initialCents
+          });
+          cursor += pauseSeconds;
+        }
+
+        const rampStart = cursor;
+
+        for (let i = 1; i < waypoints.length; i += 1) {
+          const fromCents = waypoints[i - 1];
+          const toCents = waypoints[i];
+          const duration = Math.max(0.02, (toCents - fromCents) / centsPerSecond);
+          events.push({
+            type: "move",
+            start: cursor,
+            end: cursor + duration,
+            fromCents,
+            toCents,
+            eased: usesHolds
+          });
+          cursor += duration;
+
+          if (usesHolds && i < waypoints.length - 1) {
+            events.push({
+              type: "hold",
+              start: cursor,
+              end: cursor + pauseSeconds,
+              cents: toCents
+            });
+            cursor += pauseSeconds;
+          }
+        }
+
+        return {
+          base,
+          startAt,
+          initialCents,
+          centsPerSecond,
+          rampStart,
+          rampEnd: cursor,
+          holdStops: holds,
+          holdSeconds: usesHolds ? pauseSeconds : 0,
+          pauseSource,
+          usesHolds,
+          events
+        };
+      }
+
+      function scheduleSweepFrequency(param, plan) {
+        const startHz = plan.base * ratioFromCents(plan.initialCents);
+        param.cancelScheduledValues(plan.startAt);
+        param.setValueAtTime(startHz, plan.startAt);
+
+        if (plan.rampEnd <= plan.rampStart + 0.001) {
+          param.setValueAtTime(plan.base * maxSweepRatio(), plan.startAt + 0.001);
+          return;
+        }
+
+        if (!plan.usesHolds) {
+          param.setValueAtTime(startHz, plan.rampStart);
+          param.exponentialRampToValueAtTime(plan.base * maxSweepRatio(), plan.rampEnd);
+          return;
+        }
+
+        const duration = Math.max(0.02, plan.rampEnd - plan.rampStart);
+        const sampleCount = Math.round(clamp(duration * 90, 256, 8192));
+        const values = new Float32Array(sampleCount);
+        for (let i = 0; i < sampleCount; i += 1) {
+          const t = plan.rampStart + (duration * i) / (sampleCount - 1);
+          values[i] = plan.base * ratioFromCents(centsAtPlanTime(plan, t));
+        }
+
+        if (plan.rampStart - plan.startAt > 0.002) {
+          param.setValueAtTime(startHz, plan.rampStart - 0.001);
+        }
+        param.setValueCurveAtTime(values, plan.rampStart, duration);
+      }
+
+      function scheduleRiseResume(startCents) {
+        if (!audio.active || !audio.ctx || !audio.oscB) return;
+
+        const base = getNumber(controls.baseFrequency, 220, 40, 1200);
+        const centsPerSecond = getNumber(controls.sweepSpeed, 10, 1, 2400);
+        const pauseSeconds = getNumber(controls.pauseSeconds, 2, 0, 20);
+        const now = audio.ctx.currentTime + 0.02;
+        const initialCents = clamp(startCents, 0, maxSweepCents());
+        const plan = buildSweepPlan(
+          base,
+          now,
+          centsPerSecond,
+          controls.consonanceHold.checked,
+          pauseSeconds,
+          initialCents,
+          true
+        );
+
+        clearFrequencyAutomation(audio.oscB.frequency, now, base * ratioFromCents(initialCents));
+        scheduleSweepFrequency(audio.oscB.frequency, plan);
+        audio.rampStart = plan.rampStart;
+        audio.rampEnd = plan.rampEnd;
+        audio.sweepPlan = plan;
+        audio.risePaused = false;
+        audio.pausedCents = 0;
+        visualization.previewCents = initialCents;
+        updateTransportState();
+      }
+
+      function clearFrequencyAutomation(param, time, value) {
+        if (typeof param.cancelAndHoldAtTime === "function") {
+          param.cancelAndHoldAtTime(time);
+        } else {
+          param.cancelScheduledValues(0);
+        }
+        param.setValueAtTime(value, time);
+      }
+
+      function toggleRisePause() {
+        if (!audio.active || !audio.ctx || !audio.oscB || !audio.sweepPlan) return;
+
+        if (audio.risePaused) {
+          scheduleRiseResume(audio.pausedCents);
+          return;
+        }
+
+        const now = audio.ctx.currentTime;
+        const cents = centsAtPlanTime(audio.sweepPlan, now);
+        const base = getNumber(controls.baseFrequency, 220, 40, 1200);
+        clearFrequencyAutomation(audio.oscB.frequency, now, base * ratioFromCents(cents));
+        audio.risePaused = true;
+        audio.pausedCents = cents;
+        visualization.previewCents = cents;
+        updateTransportState();
+      }
+
+      function createPanNode(value) {
+        if (audio.ctx.createStereoPanner) {
+          const panner = audio.ctx.createStereoPanner();
+          panner.pan.value = value;
+          return panner;
+        }
+        const gain = audio.ctx.createGain();
+        return gain;
+      }
+
+      function connectTone(oscillator, gain, pan) {
+        oscillator.connect(gain);
+        gain.connect(pan);
+        pan.connect(audio.master);
+      }
+
+      function stopSweep(updateState = true) {
+        if (updateState && audio.active && audio.ctx && audio.sweepPlan) {
+          visualization.previewCents = currentSweepCents();
+        }
+
+        for (const oscillator of [audio.oscA, audio.oscB]) {
+          if (!oscillator) continue;
+          try {
+            oscillator.stop();
+          } catch (error) {
+            // The oscillator may already be stopped after a quick restart.
+          }
+          oscillator.disconnect();
+        }
+
+        for (const node of [audio.gainA, audio.gainB, audio.panA, audio.panB]) {
+          if (node) node.disconnect();
+        }
+
+        audio.oscA = null;
+        audio.oscB = null;
+        audio.gainA = null;
+        audio.gainB = null;
+        audio.panA = null;
+        audio.panB = null;
+        audio.sweepPlan = null;
+        audio.active = false;
+        audio.risePaused = false;
+        audio.pausedCents = 0;
+
+        if (updateState) updateTransportState();
+      }
+
+      function eventAtPlanTime(plan, time) {
+        for (const event of plan.events) {
+          if (time >= event.start && time < event.end) return event;
+        }
+        return plan.events[plan.events.length - 1] || null;
+      }
+
+      function centsAtPlanTime(plan, time) {
+        const maxCents = maxSweepCents();
+        if (time < plan.rampStart) return plan.initialCents;
+        if (time >= plan.rampEnd) return maxCents;
+
+        const event = eventAtPlanTime(plan, time);
+        if (!event) return 0;
+        if (event.type === "hold") return event.cents;
+
+        const position = clamp((time - event.start) / (event.end - event.start), 0, 1);
+        const t = event.eased ? smoothstep(position) : position;
+        return event.fromCents + (event.toCents - event.fromCents) * t;
+      }
+
+      function smoothstep(t) {
+        return t * t * (3 - 2 * t);
+      }
+
+      function currentSweepCents() {
+        const maxCents = maxSweepCents();
+        if (!audio.active || !audio.ctx || !audio.sweepPlan) return clamp(visualization.previewCents, 0, maxCents);
+        if (audio.risePaused) return clamp(audio.pausedCents, 0, maxCents);
+        return clamp(centsAtPlanTime(audio.sweepPlan, audio.ctx.currentTime), 0, maxCents);
+      }
+
+      function getCurrentFrequencies() {
+        const base = getNumber(controls.baseFrequency, 220, 40, 1200);
+        const maxCents = maxSweepCents();
+        if (!audio.active || !audio.ctx) {
+          const previewCents = clamp(visualization.previewCents, 0, maxCents);
+          return {
+            a: base,
+            b: base * ratioFromCents(previewCents),
+            progress: previewCents / maxCents,
+            phase: "Idle"
+          };
+        }
+
+        const now = audio.ctx.currentTime;
+        const plan = audio.sweepPlan;
+        if (!plan) return { a: base, b: base, progress: 0, phase: "Idle" };
+        if (audio.risePaused) {
+          const cents = currentSweepCents();
+          return {
+            a: base,
+            b: base * ratioFromCents(cents),
+            progress: cents / maxCents,
+            phase: "Rise Paused"
+          };
+        }
+        const event = eventAtPlanTime(plan, now);
+        if (now < plan.rampStart) {
+          const cents = centsAtPlanTime(plan, now);
+          return {
+            a: base,
+            b: base * ratioFromCents(cents),
+            progress: cents / maxCents,
+            phase: event && event.type === "hold" ? "Consonance Hold" : "Waiting"
+          };
+        }
+        if (now >= plan.rampEnd) return { a: base, b: base * maxSweepRatio(), progress: 1, phase: "Holding" };
+
+        const cents = centsAtPlanTime(plan, now);
+        const b = base * ratioFromCents(cents);
+        return {
+          a: base,
+          b,
+          progress: cents / maxCents,
+          phase: event && event.type === "hold" ? "Consonance Hold" : "Rising"
+        };
+      }
+
+      function updateTransportState() {
+        controls.startButton.disabled = audio.active;
+        controls.pauseRiseButton.disabled = !audio.active;
+        controls.pauseRiseButton.textContent = audio.risePaused ? "Resume Rise" : "Pause Rise";
+        controls.stopButton.disabled = !audio.active;
+      }
+
+      function updateLiveParameters() {
+        const masterGain = Number(controls.masterGain.value);
+        readouts.gain.textContent = masterGain.toFixed(2);
+        readouts.toneAGain.textContent = Number(controls.toneAGain.value).toFixed(2);
+        readouts.toneBGain.textContent = Number(controls.toneBGain.value).toFixed(2);
+        readouts.panA.textContent = Number(controls.panA.value).toFixed(2);
+        readouts.panB.textContent = Number(controls.panB.value).toFixed(2);
+
+        if (!audio.ctx) return;
+        const now = audio.ctx.currentTime;
+        audio.master.gain.setTargetAtTime(masterGain, now, 0.015);
+        if (audio.gainA) audio.gainA.gain.setTargetAtTime(Number(controls.toneAGain.value), now, 0.015);
+        if (audio.gainB) audio.gainB.gain.setTargetAtTime(Number(controls.toneBGain.value), now, 0.015);
+        if (audio.panA && audio.panA.pan) audio.panA.pan.setTargetAtTime(Number(controls.panA.value), now, 0.015);
+        if (audio.panB && audio.panB.pan) audio.panB.pan.setTargetAtTime(Number(controls.panB.value), now, 0.015);
+      }
+
+      function updateWaveSelection(which) {
+        visualization.curveDirty = true;
+        if (!audio.ctx) return;
+        const oscillator = which === "a" ? audio.oscA : audio.oscB;
+        const select = which === "a" ? controls.waveA : controls.waveB;
+        if (oscillator) setOscillatorWave(oscillator, select.value);
+        if (audio.active && controls.consonanceHold.checked && controls.pauseSource.value === "local") {
+          startSweep(false, null, true);
+        }
+      }
+
+      function buildDissonanceCurve() {
+        const shapeA = waveShapeMap.get(controls.waveA.value) || waveShapeMap.get("sine");
+        const shapeB = waveShapeMap.get(controls.waveB.value) || waveShapeMap.get("sine");
+        const maxCents = maxSweepCents();
+        const pointCount = Math.max(320, sweepOctaves() * 160);
+        const points = [];
+
+        for (let i = 0; i <= pointCount; i += 1) {
+          const cents = (maxCents * i) / pointCount;
+          const ratio = ratioFromCents(cents);
+          points.push({
+            cents,
+            ratio,
+            value: sensoryDissonance(1, ratio, shapeA.partials, shapeB.partials)
+          });
+        }
+
+        const unisonValue = points[0] ? points[0].value : 0;
+        const adjustedPoints = points.map((point) => ({
+          ...point,
+          value: Math.max(0, point.value - unisonValue)
+        }));
+        const max = Math.max(...adjustedPoints.map((point) => point.value), 0.000001);
+        visualization.curvePoints = adjustedPoints.map((point) => ({
+          ...point,
+          value: point.value / max
+        }));
+        visualization.curveDirty = false;
+      }
+
+      function getSelectedHoldStops() {
+        let stops;
+        if (controls.pauseSource.value === "tet") {
+          stops = twelveTetCents();
+        } else if (controls.pauseSource.value === "reduced") {
+          stops = reducedRatioCents();
+        } else {
+          stops = findConsonanceStops();
+        }
+        return sanitizeHoldStops([...stops, ...customRatioCents()]);
+      }
+
+      function sanitizeHoldStops(stops) {
+        const selected = [];
+        const maxCents = maxSweepCents();
+        for (const cents of stops) {
+          if (!Number.isFinite(cents) || cents <= 0.5 || cents >= maxCents - 0.5) continue;
+          if (selected.some((value) => Math.abs(value - cents) < 1)) continue;
+          selected.push(cents);
+        }
+        return selected.sort((a, b) => a - b);
+      }
+
+      function customRatioCents() {
+        return customRatios.map((ratio) => ratio.cents);
+      }
+
+      function twelveTetCents() {
+        const cents = [];
+        const tet = tetDivisionCount();
+        const stepCents = 1200 / tet;
+        for (let step = 0; step <= sweepOctaves() * tet; step += 1) {
+          cents.push(step * stepCents);
+        }
+        return cents;
+      }
+
+      function reducedRatioCents() {
+        return reducedRatioMarks().map((ratio) => ratio.cents);
+      }
+
+      function addCustomRatiosFromInput() {
+        const raw = controls.ratioInput.value.trim();
+        const parsed = parseRatioInput(raw);
+        if (!parsed.length) {
+          controls.ratioInput.classList.add("invalid");
+          return;
+        }
+
+        for (const ratio of parsed) {
+          const duplicate = customRatios.some((existing) => Math.abs(existing.cents - ratio.cents) < 1);
+          if (!duplicate) customRatios.push(ratio);
+        }
+
+        customRatios.sort((a, b) => a.cents - b.cents);
+        controls.ratioInput.value = "";
+        controls.ratioInput.classList.remove("invalid");
+        renderCustomRatioList();
+        restartIfRatioPausesAreActive();
+      }
+
+      function parseRatioInput(raw) {
+        const normalized = raw.replace(/\s*([:/])\s*/g, "$1");
+        const tokens = normalized.split(/[,\s;]+/).map((token) => token.trim()).filter(Boolean);
+        const parsed = [];
+        for (const token of tokens) {
+          const ratio = parseRatioToken(token);
+          if (ratio) parsed.push(ratio);
+        }
+        return parsed;
+      }
+
+      function parseRatioToken(token) {
+        const centMatch = token.match(/^(\d+(?:\.\d+)?)(?:c|cent|cents)$/i);
+        if (centMatch) {
+          const cents = Number.parseFloat(centMatch[1]);
+          if (!Number.isFinite(cents) || cents < 0 || cents > maxSweepCents()) return null;
+          return {
+            label: `${trimNumber(cents)}c`,
+            ratio: ratioFromCents(cents),
+            cents
+          };
+        }
+
+        let value = Number.NaN;
+        let label = token;
+        const ratioMatch = token.match(/^(\d+(?:\.\d+)?)([:/])(\d+(?:\.\d+)?)$/);
+
+        if (ratioMatch) {
+          const numerator = Number.parseFloat(ratioMatch[1]);
+          const denominator = Number.parseFloat(ratioMatch[3]);
+          if (denominator !== 0) value = numerator / denominator;
+          label = `${trimNumber(numerator)}:${trimNumber(denominator)}`;
+        } else if (/^\d+(?:\.\d+)?$/.test(token)) {
+          value = Number.parseFloat(token);
+          label = trimNumber(value);
+        }
+
+        if (!Number.isFinite(value) || value < 1 || value > maxSweepRatio()) return null;
+        return {
+          label,
+          ratio: value,
+          cents: centsFromRatio(value)
+        };
+      }
+
+      function trimNumber(value) {
+        if (!Number.isFinite(value)) return "";
+        return value.toFixed(4).replace(/\.?0+$/, "");
+      }
+
+      function renderCustomRatioList() {
+        controls.ratioList.replaceChildren();
+        for (let index = 0; index < customRatios.length; index += 1) {
+          const ratio = customRatios[index];
+          const chip = document.createElement("span");
+          chip.className = "ratio-chip";
+
+          const label = document.createElement("span");
+          label.textContent = `${ratio.label} ${Math.round(ratio.cents)}c`;
+
+          const remove = document.createElement("button");
+          remove.className = "chip-remove";
+          remove.type = "button";
+          remove.textContent = "x";
+          remove.setAttribute("aria-label", `Remove ${ratio.label}`);
+          remove.dataset.index = String(index);
+
+          chip.append(label, remove);
+          controls.ratioList.append(chip);
+        }
+      }
+
+      function removeCustomRatio(index) {
+        customRatios.splice(index, 1);
+        renderCustomRatioList();
+        restartIfRatioPausesAreActive();
+      }
+
+      function restartIfRatioPausesAreActive() {
+        if (audio.active && controls.consonanceHold.checked) {
+          startSweep(false, null, true);
+        }
+      }
+
+      function restartIfReducedPausesAreActive() {
+        if (audio.active && controls.consonanceHold.checked && controls.pauseSource.value === "reduced") {
+          startSweep(false, null, true);
+        }
+      }
+
+      function findConsonanceStops() {
+        if (visualization.curveDirty) buildDissonanceCurve();
+
+        const points = visualization.curvePoints;
+        if (points.length < 7) return [];
+
+        const smoothed = points.map((point, index) => {
+          let total = 0;
+          let count = 0;
+          for (let offset = -2; offset <= 2; offset += 1) {
+            const nearby = points[index + offset];
+            if (!nearby) continue;
+            total += nearby.value;
+            count += 1;
+          }
+          return total / count;
+        });
+
+        const candidates = [];
+        const maxCents = maxSweepCents();
+        const maxStops = Math.max(48, 48 * sweepOctaves());
+        for (let i = 2; i < points.length - 2; i += 1) {
+          const cents = points[i].cents;
+          if (cents < 15 || cents > maxCents - 15) continue;
+          if (!(smoothed[i] <= smoothed[i - 1] && smoothed[i] < smoothed[i + 1])) continue;
+
+          const leftStart = Math.max(0, i - 9);
+          const rightEnd = Math.min(points.length - 1, i + 9);
+          const leftPeak = Math.max(...smoothed.slice(leftStart, i + 1));
+          const rightPeak = Math.max(...smoothed.slice(i, rightEnd + 1));
+          const prominence = Math.min(leftPeak - smoothed[i], rightPeak - smoothed[i]);
+          if (prominence < 0.006 || smoothed[i] > 0.94) continue;
+
+          candidates.push({
+            cents,
+            value: smoothed[i],
+            prominence,
+            score: prominence * (1.15 - smoothed[i])
+          });
+        }
+
+        const selected = [];
+        for (const candidate of candidates.sort((a, b) => b.score - a.score)) {
+          if (selected.some((point) => Math.abs(point.cents - candidate.cents) < 24)) continue;
+          selected.push(candidate);
+          if (selected.length >= maxStops) break;
+        }
+
+        return selected
+          .sort((a, b) => a.cents - b.cents)
+          .map((candidate) => candidate.cents);
+      }
+
+      function sensoryDissonance(fundA, fundB, partialsA, partialsB) {
+        let total = 0;
+        for (const [multipleA, ampA] of partialsA) {
+          const freqA = fundA * multipleA;
+          for (const [multipleB, ampB] of partialsB) {
+            const freqB = fundB * multipleB;
+            total += roughnessPair(freqA, freqB, ampA, ampB);
+          }
+        }
+        return total;
+      }
+
+      function roughnessPair(freqA, freqB, ampA, ampB) {
+        const centsDistance = Math.abs(centsFromRatio(freqB / freqA));
+        const x = centsDistance / DISSONANCE_CENTS_SCALE;
+        return ampA * ampB * (Math.exp(-3.5 * x) - Math.exp(-5.75 * x));
+      }
+
+      function resizeCanvas(canvas, ctx) {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width * ratio));
+        const height = Math.max(1, Math.round(rect.height * ratio));
+        if (canvas.width === width && canvas.height === height) return false;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return true;
+      }
+
+      function resizeCanvases() {
+        let changed = false;
+        changed = resizeCanvas(canvases.waveform, ctxs.waveform) || changed;
+        changed = resizeCanvas(canvases.spectrogram, ctxs.spectrogram) || changed;
+        changed = resizeCanvas(canvases.curve, ctxs.curve) || changed;
+        if (changed) {
+          visualization.curveDirty = true;
+          clearSpectrogram();
+        }
+      }
+
+      function cssSize(canvas) {
+        return {
+          width: canvas.width / (window.devicePixelRatio || 1),
+          height: canvas.height / (window.devicePixelRatio || 1)
+        };
+      }
+
+      function drawWaveform() {
+        const canvas = canvases.waveform;
+        const ctx = ctxs.waveform;
+        const { width, height } = cssSize(canvas);
+        ctx.clearRect(0, 0, width, height);
+        drawCanvasBase(ctx, width, height, "time");
+
+        if (!audio.active || !audio.waveAnalyser || !audio.ctx) {
+          drawIdleTrace(ctx, width, height);
+          readouts.waveformMeta.textContent = `${WAVEFORM_ANCHOR_CYCLES} fixed A cycles`;
+          return;
+        }
+
+        const freqs = getCurrentFrequencies();
+        if (!visualization.timeData || visualization.timeData.length !== audio.waveAnalyser.fftSize) {
+          visualization.timeData = new Float32Array(audio.waveAnalyser.fftSize);
+        }
+        audio.waveAnalyser.getFloatTimeDomainData(visualization.timeData);
+
+        const data = visualization.timeData;
+        const sampleRate = audio.ctx.sampleRate;
+        const windowSeconds = WAVEFORM_ANCHOR_CYCLES / Math.max(1, freqs.a);
+        const windowSamples = Math.max(16, Math.round(windowSeconds * sampleRate));
+        const visibleSamples = Math.min(windowSamples, data.length - 2);
+        const startIndex = phaseLockedWaveStartIndex(data.length, visibleSamples, freqs.a);
+        const samples = Math.max(320, Math.floor(width * 1.5));
+        const center = height * 0.5;
+        const amplitude = height * 0.34;
+        const normalization = waveformNormalization(data, startIndex, visibleSamples);
+
+        drawToneACycleGuides(ctx, width, height);
+
+        ctx.save();
+        ctx.strokeStyle = "#73d2de";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        for (let i = 0; i < samples; i += 1) {
+          const fraction = i / (samples - 1);
+          const samplePosition = startIndex + fraction * visibleSamples;
+          const value = interpolatedSample(data, samplePosition) * normalization;
+          const x = fraction * width;
+          const y = center - clamp(value, -1, 1) * amplitude;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        readouts.waveformMeta.textContent = `${WAVEFORM_ANCHOR_CYCLES} fixed A cycles | live output`;
+      }
+
+      function phaseLockedWaveStartIndex(dataLength, visibleSamples, baseFrequency) {
+        const sampleRate = audio.ctx.sampleRate;
+        const dataStartTime = audio.ctx.currentTime - dataLength / sampleRate;
+        const period = 1 / Math.max(1, baseFrequency);
+        const anchorTime = audio.startedAt || dataStartTime;
+        const latestStart = dataStartTime + (dataLength - visibleSamples - 2) / sampleRate;
+        const cyclesSinceAnchor = Math.floor((latestStart - anchorTime) / period);
+        const targetStart = anchorTime + Math.max(0, cyclesSinceAnchor) * period;
+        const targetIndex = Math.round((targetStart - dataStartTime) * sampleRate);
+        return clamp(targetIndex, 0, Math.max(0, dataLength - visibleSamples - 2));
+      }
+
+      function interpolatedSample(data, position) {
+        const left = clamp(Math.floor(position), 0, data.length - 1);
+        const right = clamp(left + 1, 0, data.length - 1);
+        const t = position - left;
+        return data[left] * (1 - t) + data[right] * t;
+      }
+
+      function waveformNormalization(data, startIndex, visibleSamples) {
+        let peak = 0;
+        const end = Math.min(data.length, Math.ceil(startIndex + visibleSamples));
+        for (let i = Math.max(0, Math.floor(startIndex)); i < end; i += 1) {
+          peak = Math.max(peak, Math.abs(data[i]));
+        }
+        return peak > 0.0001 ? 1 / peak : 1;
+      }
+
+      function drawToneACycleGuides(ctx, width, height) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(118, 228, 166, 0.25)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= WAVEFORM_ANCHOR_CYCLES; i += 1) {
+          const x = (width * i) / WAVEFORM_ANCHOR_CYCLES;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawCanvasBase(ctx, width, height, mode) {
+        ctx.fillStyle = "#10141f";
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = "#263145";
+        ctx.lineWidth = 1;
+        const rows = mode === "curve" ? 4 : 6;
+        const cols = mode === "curve" ? 8 : 10;
+        for (let i = 1; i < rows; i += 1) {
+          const y = (height * i) / rows;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+        for (let i = 1; i < cols; i += 1) {
+          const x = (width * i) / cols;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+
+        if (mode === "time") {
+          ctx.strokeStyle = "#59677e";
+          ctx.beginPath();
+          ctx.moveTo(0, height / 2);
+          ctx.lineTo(width, height / 2);
+          ctx.stroke();
+        }
+      }
+
+      function drawIdleTrace(ctx, width, height) {
+        ctx.strokeStyle = "#59677e";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 10) {
+          const y = height * 0.5 + Math.sin(x * 0.045) * 12;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      function clearSpectrogram() {
+        const canvas = canvases.spectrogram;
+        const ctx = ctxs.spectrogram;
+        const { width, height } = cssSize(canvas);
+        ctx.fillStyle = "#10141f";
+        ctx.fillRect(0, 0, width, height);
+        drawSpectrogramGrid();
+        visualization.spectrogramReady = true;
+        visualization.spectrogramLastTime = performance.now();
+        visualization.spectrogramPixelCarry = 0;
+      }
+
+      function drawSpectrogram() {
+        const canvas = canvases.spectrogram;
+        const ctx = ctxs.spectrogram;
+        const { width, height } = cssSize(canvas);
+        if (!visualization.spectrogramReady) clearSpectrogram();
+
+        if (!audio.analyser) {
+          drawSpectrogramGrid();
+          return;
+        }
+
+        if (!visualization.freqData || visualization.freqData.length !== audio.analyser.frequencyBinCount) {
+          visualization.freqData = new Uint8Array(audio.analyser.frequencyBinCount);
+        }
+
+        audio.analyser.getByteFrequencyData(visualization.freqData);
+        const now = performance.now();
+        const elapsedSeconds = visualization.spectrogramLastTime
+          ? Math.min(0.5, (now - visualization.spectrogramLastTime) / 1000)
+          : 0;
+        visualization.spectrogramLastTime = now;
+        visualization.spectrogramPixelCarry += elapsedSeconds * (canvas.width / SPECTROGRAM_HISTORY_SECONDS);
+        const stripeWidth = Math.min(canvas.width, Math.floor(visualization.spectrogramPixelCarry));
+        if (stripeWidth < 1) {
+          drawSpectrogramGrid();
+          const freqs = getCurrentFrequencies();
+          readouts.spectrogramMeta.textContent = `${SPECTROGRAM_HISTORY_SECONDS}s log scale | ${freqs.phase.toLowerCase()} sweep`;
+          return;
+        }
+        visualization.spectrogramPixelCarry -= stripeWidth;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(
+          canvas,
+          stripeWidth,
+          0,
+          Math.max(1, canvas.width - stripeWidth),
+          canvas.height,
+          0,
+          0,
+          Math.max(1, canvas.width - stripeWidth),
+          canvas.height
+        );
+        ctx.fillStyle = "#10141f";
+        ctx.fillRect(canvas.width - stripeWidth, 0, stripeWidth, canvas.height);
+
+        for (let y = 0; y < canvas.height; y += 1) {
+          const hz = spectrogramYToFrequency(y, canvas.height);
+          const bin = Math.round((hz / (audio.ctx.sampleRate / 2)) * (visualization.freqData.length - 1));
+          const value = visualization.freqData[clamp(bin, 0, visualization.freqData.length - 1)] / 255;
+          ctx.fillStyle = spectrogramColor(value);
+          ctx.fillRect(canvas.width - stripeWidth, y, stripeWidth, 1);
+        }
+        ctx.restore();
+
+        drawSpectrogramGrid();
+        const freqs = getCurrentFrequencies();
+        readouts.spectrogramMeta.textContent = `${SPECTROGRAM_HISTORY_SECONDS}s log scale | ${freqs.phase.toLowerCase()} sweep`;
+      }
+
+      function drawSpectrogramGrid() {
+        const canvas = canvases.spectrogram;
+        const ctx = ctxs.spectrogram;
+        const { width, height } = cssSize(canvas);
+        const base = spectrogramMinHz();
+        ctx.save();
+        ctx.strokeStyle = "rgba(89, 103, 126, 0.28)";
+        ctx.lineWidth = 1;
+        ctx.font = "11px Inter, system-ui, sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        for (const ratio of SPECTROGRAM_LABEL_RATIOS) {
+          const hz = base * ratio;
+          if (hz > spectrogramMaxHz()) continue;
+          const y = frequencyToSpectrogramY(hz, height);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(16, 20, 31, 0.74)";
+          ctx.fillRect(0, y - 9, 48, 18);
+          ctx.fillStyle = "#b8c1d2";
+          ctx.fillText(formatHzLabel(hz), 7, y);
+        }
+        ctx.restore();
+      }
+
+      function formatHzLabel(hz) {
+        return hz >= 1000 ? `${trimNumber(hz / 1000)}k` : String(hz);
+      }
+
+      function spectrogramColor(value) {
+        const v = Math.max(0, (value - 0.03) / 0.97);
+        const r = Math.round(18 + 230 * Math.min(1, Math.max(0, (v - 0.38) * 1.9)));
+        const g = Math.round(24 + 190 * Math.sin(Math.min(1, v) * Math.PI * 0.82));
+        const b = Math.round(36 + 205 * Math.min(1, v * 1.35));
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+
+      function curvePlotMetrics(width, height) {
+        const padLeft = 42;
+        const padRight = 18;
+        const padTop = 64;
+        const padBottom = 34;
+        return {
+          padLeft,
+          padRight,
+          padTop,
+          padBottom,
+          plotW: width - padLeft - padRight,
+          plotH: height - padTop - padBottom
+        };
+      }
+
+      function drawTopMarkerLabel(ctx, label, x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-Math.PI / 3);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      }
+
+      function localOptimumMarks() {
+        return findConsonanceStops().map((cents) => ({
+          label: `${Math.round(cents)}c`,
+          tooltip: "Local optimum",
+          displayRatio: null,
+          cents
+        }));
+      }
+
+      function twelveTetMarks() {
+        return twelveTetCents().map((cents) => {
+          const tet = tetDivisionCount();
+          const step = Math.round((cents / 1200) * tet);
+          const ratio = ratioFromCents(cents);
+          const label = step === 0
+            ? `0/${tet}`
+            : step % tet === 0
+              ? `${step / tet} oct`
+              : `${step}/${tet}`;
+          return {
+            label,
+            tooltip: `2^(${step}/${tet}):1 = ${ratio.toFixed(4)}:1`,
+            displayRatio: null,
+            cents
+          };
+        });
+      }
+
+      function reducedRatioMarks() {
+        const limit = maxSweepRatio();
+        const count = Math.round(getNumber(controls.reducedRatioCount, reducedRatioCountDefault(), 1, 500));
+        const selected = [];
+        const maxProduct = 2000000;
+
+        for (let product = 1; selected.length < count && product <= maxProduct; product += 1) {
+          const productMarks = [];
+          for (let denominator = 1; denominator * denominator <= product; denominator += 1) {
+            if (product % denominator !== 0) continue;
+            const numerator = product / denominator;
+            if (numerator < denominator) continue;
+            if (greatestCommonDivisor(numerator, denominator) !== 1) continue;
+            const ratio = numerator / denominator;
+            if (ratio < 1 || ratio > limit + 1e-12) continue;
+            productMarks.push({
+              numerator,
+              denominator,
+              ratio,
+              product,
+              label: denominator === 1 ? `${numerator}:1` : `${numerator}:${denominator}`,
+              tooltip: denominator === 1 ? `${numerator}:1` : `${numerator}:${denominator}`,
+              displayRatio: denominator === 1 ? `${numerator}:1` : `${numerator}:${denominator}`,
+              cents: centsFromRatio(ratio)
+            });
+          }
+
+          productMarks.sort((a, b) => a.ratio - b.ratio);
+          for (const mark of productMarks) {
+            selected.push(mark);
+            if (selected.length >= count) break;
+          }
+        }
+
+        return selected.sort((a, b) => a.cents - b.cents || a.product - b.product);
+      }
+
+      function greatestCommonDivisor(a, b) {
+        let x = Math.abs(a);
+        let y = Math.abs(b);
+        while (y) {
+          const next = x % y;
+          x = y;
+          y = next;
+        }
+        return x;
+      }
+
+      function visibleCurveVerticalMarkers() {
+        return [...modeCurveVerticalMarkers(), ...customRatioMarks()];
+      }
+
+      function customRatioMarks() {
+        const maxCents = maxSweepCents();
+        return customRatios
+          .filter((ratio) => ratio.cents <= maxCents + 0.5)
+          .map((ratio) => ({
+            label: ratio.label,
+            tooltip: ratio.label,
+            displayRatio: ratio.label,
+            cents: ratio.cents
+          }));
+      }
+
+      function modeCurveVerticalMarkers() {
+        if (controls.pauseSource.value === "tet") return twelveTetMarks();
+        if (controls.pauseSource.value === "reduced") return reducedRatioMarks();
+        return localOptimumMarks();
+      }
+
+      function curveGridCents() {
+        const maxCents = maxSweepCents();
+        const step = maxCents <= 2400 ? 300 : 600;
+        const ticks = [];
+        for (let cents = 0; cents <= maxCents + 0.5; cents += step) ticks.push(cents);
+        if (ticks[ticks.length - 1] !== maxCents) ticks.push(maxCents);
+        return ticks;
+      }
+
+      function drawDissonanceCurve() {
+        if (visualization.curveDirty) buildDissonanceCurve();
+
+        const canvas = canvases.curve;
+        const ctx = ctxs.curve;
+        const { width, height } = cssSize(canvas);
+        drawCanvasBase(ctx, width, height, "curve");
+
+        const maxCents = maxSweepCents();
+        const { padLeft, padTop, plotW, plotH } = curvePlotMetrics(width, height);
+        const xFor = (cents) => padLeft + (cents / maxCents) * plotW;
+        const yFor = (value) => padTop + (1 - value) * plotH;
+
+        ctx.save();
+        ctx.strokeStyle = "#30405b";
+        ctx.fillStyle = "#b8c1d2";
+        ctx.lineWidth = 1;
+        ctx.font = "12px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        for (const cents of curveGridCents()) {
+          const x = xFor(cents);
+          ctx.beginPath();
+          ctx.moveTo(x, padTop);
+          ctx.lineTo(x, padTop + plotH);
+          ctx.stroke();
+          ctx.fillText(String(cents), x, padTop + plotH + 9);
+        }
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText("rough", padLeft - 8, padTop + 2);
+        ctx.fillText("smooth", padLeft - 8, padTop + plotH);
+
+        ctx.strokeStyle = "#93c5fd";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        visualization.curvePoints.forEach((point, index) => {
+          const x = xFor(point.cents);
+          const y = yFor(point.value);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        if (controls.pauseSource.value === "local") {
+          ctx.fillStyle = "#dbeafe";
+          ctx.textBaseline = "bottom";
+          for (const mark of localOptimumMarks()) {
+            const x = xFor(mark.cents);
+            ctx.fillRect(x - 1, padTop, 2, plotH);
+            ctx.fillText(mark.label, x, padTop - 3);
+          }
+        } else if (controls.pauseSource.value === "tet") {
+          ctx.fillStyle = "#dbeafe";
+          ctx.textBaseline = "bottom";
+          const marks = twelveTetMarks();
+          const tet = tetDivisionCount();
+          const labelStep = Math.max(1, Math.round(tet / 4));
+          for (let i = 0; i < marks.length; i += 1) {
+            const mark = marks[i];
+            const x = xFor(mark.cents);
+            ctx.fillRect(x - 0.5, padTop, 1, plotH);
+            if (i % labelStep === 0 || i % tet === 0) ctx.fillText(mark.label, x, padTop - 3);
+          }
+        } else if (controls.pauseSource.value === "reduced") {
+          ctx.save();
+          ctx.fillStyle = "#dbeafe";
+          ctx.font = "10px Inter, system-ui, sans-serif";
+          const marks = reducedRatioMarks();
+          for (let i = 0; i < marks.length; i += 1) {
+            const mark = marks[i];
+            const x = xFor(mark.cents);
+            ctx.fillRect(x - 0.7, padTop, 1.4, plotH);
+            drawTopMarkerLabel(ctx, mark.label, x, padTop - 7);
+          }
+          ctx.restore();
+        }
+
+        const customStops = customRatioMarks();
+        ctx.save();
+        for (let i = 0; i < customStops.length; i += 1) {
+          const stop = customStops[i];
+          const x = xFor(stop.cents);
+          const stripeWidth = 5;
+          ctx.fillStyle = "rgba(251, 191, 36, 0.18)";
+          ctx.fillRect(x - stripeWidth / 2, padTop, stripeWidth, plotH);
+          ctx.strokeStyle = "#fbbf24";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, padTop);
+          ctx.lineTo(x, padTop + plotH);
+          ctx.stroke();
+          ctx.fillStyle = "#ffe8a3";
+          ctx.textAlign = i % 2 === 0 ? "left" : "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(stop.label, x + (i % 2 === 0 ? 4 : -4), padTop + plotH - 4);
+        }
+        ctx.restore();
+
+        const holdStops = audio.sweepPlan && audio.sweepPlan.usesHolds
+          ? audio.sweepPlan.holdStops
+          : controls.consonanceHold.checked
+            ? getSelectedHoldStops()
+            : [];
+        ctx.fillStyle = "#fbbf24";
+        for (const cents of holdStops) {
+          const x = xFor(cents);
+          const y = yFor(sampleCurve(cents));
+          ctx.beginPath();
+          ctx.moveTo(x, y - 8);
+          ctx.lineTo(x + 6, y + 4);
+          ctx.lineTo(x - 6, y + 4);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        const freqs = getCurrentFrequencies();
+        const ratio = clamp(freqs.b / freqs.a, 1, maxSweepRatio());
+        const cents = centsFromRatio(ratio);
+        const markerX = xFor(cents);
+        const curveValue = sampleCurve(cents);
+        const markerY = yFor(curveValue);
+
+        ctx.strokeStyle = "#ff817a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(markerX, padTop);
+        ctx.lineTo(markerX, padTop + plotH);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ff817a";
+        ctx.beginPath();
+        ctx.arc(markerX, markerY, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(markerX, markerY, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#f7f8fb";
+        ctx.textAlign = markerX > width - 110 ? "right" : "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(`${Math.round(cents)} cents`, markerX + (markerX > width - 110 ? -9 : 9), padTop + 8);
+        ctx.restore();
+
+        const rangeText = `${sweepOctaves()} oct | ${Math.round(maxCents)}c`;
+        readouts.curveMeta.textContent = holdStops.length
+          ? `${ratio.toFixed(3)} ratio | ${holdStops.length} holds | ${rangeText}`
+          : `${ratio.toFixed(3)} ratio | ${rangeText}`;
+        readouts.progressBar.style.width = `${(cents / maxCents) * 100}%`;
+      }
+
+      function sampleCurve(cents) {
+        const points = visualization.curvePoints;
+        if (!points.length) return 0;
+        const position = clamp((cents / maxSweepCents()) * (points.length - 1), 0, points.length - 1);
+        const left = Math.floor(position);
+        const right = Math.min(points.length - 1, left + 1);
+        const t = position - left;
+        return points[left].value * (1 - t) + points[right].value * t;
+      }
+
+      function nearestCurveMarkerAtEvent(event, maxDistance = 9) {
+        const rect = canvases.curve.getBoundingClientRect();
+        const { padLeft, padTop, plotW, plotH } = curvePlotMetrics(rect.width, rect.height);
+        const maxCents = maxSweepCents();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        if (y < padTop || y > padTop + plotH) return null;
+
+        let nearest = null;
+        for (const mark of visibleCurveVerticalMarkers()) {
+          const markerX = padLeft + (mark.cents / maxCents) * plotW;
+          const distance = Math.abs(x - markerX);
+          if (distance > maxDistance || (nearest && distance >= nearest.distance)) continue;
+          nearest = { ...mark, x: markerX, distance };
+        }
+        return nearest;
+      }
+
+      function seekCurveFromEvent(event) {
+        const rect = canvases.curve.getBoundingClientRect();
+        const { padLeft, plotW } = curvePlotMetrics(rect.width, rect.height);
+        const x = event.clientX - rect.left;
+        const marker = nearestCurveMarkerAtEvent(event, 9);
+        const maxCents = maxSweepCents();
+        const cents = marker ? marker.cents : clamp(((x - padLeft) / plotW) * maxCents, 0, maxCents);
+        visualization.previewCents = cents;
+        if (audio.active && audio.risePaused && audio.oscB && audio.ctx) {
+          const base = getNumber(controls.baseFrequency, 220, 40, 1200);
+          clearFrequencyAutomation(audio.oscB.frequency, audio.ctx.currentTime, base * ratioFromCents(cents));
+          audio.pausedCents = cents;
+          updateTransportState();
+        } else if (audio.active) {
+          startSweep(false, cents, true);
+        } else {
+          updateReadouts();
+        }
+      }
+
+      function handleCurveHover(event) {
+        const rect = canvases.curve.getBoundingClientRect();
+        const parentRect = canvases.curve.parentElement.getBoundingClientRect();
+        const { padTop, plotH } = curvePlotMetrics(rect.width, rect.height);
+        const y = event.clientY - rect.top;
+
+        if (y < padTop || y > padTop + plotH) {
+          hideCurveTooltip();
+          return;
+        }
+
+        const nearest = nearestCurveMarkerAtEvent(event, 9);
+
+        if (!nearest) {
+          hideCurveTooltip();
+          return;
+        }
+
+        const left = clamp(nearest.x + rect.left - parentRect.left, 36, parentRect.width - 36);
+        const top = y + rect.top - parentRect.top;
+        readouts.curveTooltip.textContent = `${nearest.tooltip || nearest.label} | ${Math.round(nearest.cents)} cents`;
+        readouts.curveTooltip.style.left = `${left}px`;
+        readouts.curveTooltip.style.top = `${top}px`;
+        readouts.curveTooltip.classList.add("visible");
+      }
+
+      function hideCurveTooltip() {
+        readouts.curveTooltip.classList.remove("visible");
+      }
+
+      function isSweepPausedNow() {
+        if (!audio.active || !audio.ctx || !audio.sweepPlan) return false;
+        if (audio.risePaused) return true;
+        if (audio.ctx.currentTime >= audio.sweepPlan.rampEnd) return true;
+        const event = eventAtPlanTime(audio.sweepPlan, audio.ctx.currentTime);
+        return Boolean(event && event.type === "hold");
+      }
+
+      function nearestPausedRatioLabel(cents) {
+        if (!isSweepPausedNow()) return null;
+
+        let nearest = null;
+        for (const mark of visibleCurveVerticalMarkers()) {
+          if (!mark.displayRatio) continue;
+          const distance = Math.abs(mark.cents - cents);
+          if (distance > 8 || (nearest && distance >= nearest.distance)) continue;
+          nearest = { label: mark.displayRatio, distance };
+        }
+
+        return nearest ? nearest.label : null;
+      }
+
+      function formatBigRatio(ratio, cents) {
+        if (isSweepPausedNow()) {
+          const labeledRatio = nearestPausedRatioLabel(cents);
+          if (labeledRatio) return labeledRatio;
+        }
+        return `${ratio.toFixed(4)}:1`;
+      }
+
+      function updateReadouts() {
+        const freqs = getCurrentFrequencies();
+        const ratio = freqs.b / freqs.a;
+        const cents = centsFromRatio(ratio);
+        readouts.bigRatio.textContent = formatBigRatio(ratio, cents);
+        readouts.bigCents.textContent = `${Math.round(cents)} cents | A ${freqs.a.toFixed(2)} Hz | B ${freqs.b.toFixed(2)} Hz`;
+      }
+
+      function render(now) {
+        if (now - visualization.lastFrame > 80) {
+          resizeCanvases();
+          visualization.lastFrame = now;
+        }
+
+        drawWaveform();
+        drawSpectrogram();
+        drawDissonanceCurve();
+        updateReadouts();
+        requestAnimationFrame(render);
+      }
+
+      controls.startButton.addEventListener("click", () => startSweep(true));
+      controls.restartButton.addEventListener("click", () => {
+        visualization.previewCents = 0;
+        startSweep(true, 0);
+      });
+      controls.pauseRiseButton.addEventListener("click", toggleRisePause);
+      controls.stopButton.addEventListener("click", () => stopSweep(true));
+
+      for (const input of [controls.masterGain, controls.toneAGain, controls.toneBGain, controls.panA, controls.panB]) {
+        input.addEventListener("input", updateLiveParameters);
+      }
+
+      controls.waveA.addEventListener("change", () => updateWaveSelection("a"));
+      controls.waveB.addEventListener("change", () => updateWaveSelection("b"));
+      canvases.curve.addEventListener("click", seekCurveFromEvent);
+      canvases.curve.addEventListener("mousemove", handleCurveHover);
+      canvases.curve.addEventListener("mouseleave", hideCurveTooltip);
+
+      controls.ratioForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        addCustomRatiosFromInput();
+      });
+
+      controls.ratioInput.addEventListener("input", () => {
+        controls.ratioInput.classList.remove("invalid");
+      });
+
+      controls.ratioList.addEventListener("click", (event) => {
+        if (!(event.target instanceof Element)) return;
+        const button = event.target.closest(".chip-remove");
+        if (!button) return;
+        removeCustomRatio(Number(button.dataset.index));
+      });
+
+      controls.pauseSource.addEventListener("change", () => {
+        if (audio.active && controls.consonanceHold.checked) startSweep(false, null, true);
+      });
+
+      controls.octaveCount.addEventListener("change", () => {
+        controls.octaveCount.value = String(sweepOctaves());
+        syncReducedRatioDefault();
+        visualization.previewCents = clamp(visualization.previewCents, 0, maxSweepCents());
+        visualization.curveDirty = true;
+        if (audio.active) startSweep(false, null, true);
+      });
+
+      controls.reducedRatioCount.addEventListener("input", () => {
+        controls.reducedRatioCount.dataset.userEdited = "true";
+      });
+
+      controls.reducedRatioCount.addEventListener("change", () => {
+        controls.reducedRatioCount.dataset.userEdited = "true";
+        controls.reducedRatioCount.value = String(Math.round(
+          getNumber(controls.reducedRatioCount, reducedRatioCountDefault(), 1, 500)
+        ));
+        restartIfReducedPausesAreActive();
+      });
+
+      controls.tetCount.addEventListener("change", () => {
+        controls.tetCount.value = String(tetDivisionCount());
+        if (audio.active && controls.consonanceHold.checked && controls.pauseSource.value === "tet") {
+          startSweep(false, null, true);
+        }
+      });
+
+      for (const input of [controls.baseFrequency, controls.sweepSpeed, controls.pauseSeconds, controls.consonanceHold]) {
+        input.addEventListener("change", () => {
+          if (input !== controls.baseFrequency) visualization.curveDirty = true;
+          if (input === controls.baseFrequency) clearSpectrogram();
+          if (audio.active) startSweep(false, null, true);
+        });
+      }
+
+      window.addEventListener("resize", resizeCanvases);
+      window.addEventListener("beforeunload", () => stopSweep(false));
+
+      fillWaveOptions();
+      syncReducedRatioDefault();
+      renderCustomRatioList();
+      updateLiveParameters();
+      resizeCanvases();
+      clearSpectrogram();
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>
