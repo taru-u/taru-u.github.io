@@ -89,6 +89,28 @@
       backdrop-filter: blur(14px);
     }
 
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .mode-tab {
+      min-height: 34px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .mode-tab[aria-pressed="true"] {
+      background: var(--button-bg);
+      color: var(--button-text);
+    }
+
     .controls-row {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -241,24 +263,29 @@
   <main class="stage" aria-live="off">
     <section class="start-panel" id="startPanel">
       <h1>Frequency Recognition Trainer</h1>
-      <p>Estimate the flashing frequency from 5 to 40 Hz, then submit your guess.</p>
+      <p>Explore flashing frequencies from 5 to 30 Hz, or switch to guess mode and estimate the hidden speed.</p>
       <p>WARNING: DO NOT continue further if you have photosensitive epilepsy or are otherwise sensitive to flashing lights.</p>
       <button id="startButton" type="button">Start</button>
     </section>
   </main>
 
-  <section class="controls hidden" id="controls" aria-label="Frequency guess controls">
+  <section class="controls hidden" id="controls" aria-label="Frequency controls">
+    <div class="mode-tabs" role="group" aria-label="Mode">
+      <button class="mode-tab" id="exploreModeButton" type="button" aria-pressed="true">Explore</button>
+      <button class="mode-tab" id="guessModeButton" type="button" aria-pressed="false">Guess</button>
+    </div>
     <div class="controls-row">
       <span class="limit">5 Hz</span>
-      <input id="guessSlider" type="range" min="5" max="40" step="0.1" value="22.5" aria-label="Frequency guess">
-      <span class="limit">40 Hz</span>
+      <input id="guessSlider" type="range" min="5" max="30" step="0.1" value="17.5" aria-label="Frequency">
+      <span class="limit">30 Hz</span>
     </div>
-    <div class="value" id="guessValue">22.5 Hz</div>
+    <div class="value" id="guessValue">17.5 Hz</div>
     <div class="actions">
       <button id="submitButton" type="button">Submit Guess</button>
+      <button id="randomizeButton" type="button">Change Color</button>
       <button class="secondary" id="pauseButton" type="button">Pause</button>
     </div>
-    <div class="result" id="result">No guess yet</div>
+    <div class="result" id="result"></div>
   </section>
 
   <section class="history hidden" id="history" aria-label="Recent guess errors"></section>
@@ -266,7 +293,7 @@
   <script>
     (() => {
       const minHz = 5;
-      const maxHz = 40;
+      const maxHz = 30;
       const maxStoredGuesses = 500;
       const historyBarWidth = 16;
       const historyGap = 5;
@@ -279,7 +306,10 @@
       const startPanel = document.getElementById("startPanel");
       const startButton = document.getElementById("startButton");
       const submitButton = document.getElementById("submitButton");
+      const randomizeButton = document.getElementById("randomizeButton");
       const pauseButton = document.getElementById("pauseButton");
+      const exploreModeButton = document.getElementById("exploreModeButton");
+      const guessModeButton = document.getElementById("guessModeButton");
       const history = document.getElementById("history");
       const waveformTypes = [
         { id: "square", label: "Square" },
@@ -288,7 +318,8 @@
       ];
 
       const state = {
-        targetHz: 20,
+        mode: "explore",
+        targetHz: 17.5,
         previousTargetHz: null,
         waveform: waveformTypes[0],
         colors: [
@@ -399,7 +430,7 @@
           const candidate = Math.round(randomBetween(minHz, maxHz) * 10) / 10;
           const isLessCommonBand =
             (candidate >= 5 && candidate <= 10) ||
-            (candidate >= 30 && candidate <= 40);
+            (candidate >= maxHz - 5 && candidate <= maxHz);
 
           if (previousHz !== null) {
             const difference = Math.abs(candidate - previousHz);
@@ -495,7 +526,10 @@
 
       function renderHistory() {
         history.replaceChildren();
-        history.classList.toggle("hidden", state.guessHistory.length === 0 || state.historySlots === 0);
+        history.classList.toggle(
+          "hidden",
+          state.mode === "explore" || state.guessHistory.length === 0 || state.historySlots === 0
+        );
 
         if (state.historySlots === 0) {
           return;
@@ -518,6 +552,17 @@
           historyItem.title = `Target ${item.target.toFixed(1)} Hz, guess ${item.guess.toFixed(1)} Hz, error ${item.error.toFixed(1)} Hz`;
           historyItem.append(label, bar);
           history.appendChild(historyItem);
+        }
+      }
+
+      function randomizeAppearance() {
+        state.waveform = randomChoice(waveformTypes);
+        state.colors = randomMediumContrastPair();
+
+        if (!state.paused) {
+          startAnimation();
+        } else {
+          document.body.style.backgroundColor = rgb(blend(state.colors[0], state.colors[1], 0.5));
         }
       }
 
@@ -674,13 +719,17 @@
         const nextTargetHz = randomTargetHz(state.previousTargetHz);
         state.previousTargetHz = nextTargetHz;
         state.targetHz = nextTargetHz;
-        state.waveform = randomChoice(waveformTypes);
-        state.colors = randomMediumContrastPair();
+        randomizeAppearance();
         startAnimation();
       }
 
       function updateGuessValue() {
-        guessValue.textContent = `${Number(slider.value).toFixed(1)} Hz`;
+        const hz = Number(slider.value);
+        guessValue.textContent = `${hz.toFixed(1)} Hz`;
+
+        if (state.mode === "explore") {
+          state.targetHz = hz;
+        }
       }
 
       function submitGuess() {
@@ -695,16 +744,42 @@
         newTrial();
       }
 
+      function setMode(mode) {
+        state.mode = mode;
+        const isExplore = mode === "explore";
+
+        exploreModeButton.setAttribute("aria-pressed", String(isExplore));
+        guessModeButton.setAttribute("aria-pressed", String(!isExplore));
+        submitButton.classList.toggle("hidden", isExplore);
+        randomizeButton.classList.toggle("hidden", !isExplore);
+        history.classList.toggle("hidden", isExplore || state.guessHistory.length === 0 || state.historySlots === 0);
+        result.textContent = isExplore ? "" : "No guess yet";
+        slider.setAttribute("aria-label", isExplore ? "Frequency speed" : "Frequency guess");
+
+        if (isExplore) {
+          state.targetHz = Number(slider.value);
+          updateControlsHeight();
+          startAnimation();
+          return;
+        }
+
+        newTrial();
+        updateControlsHeight();
+      }
+
       startButton.addEventListener("click", () => {
         startPanel.classList.add("hidden");
         controls.classList.remove("hidden");
+        setMode("explore");
         updateControlsHeight();
         updateGuessValue();
-        newTrial();
       });
 
       slider.addEventListener("input", updateGuessValue);
       submitButton.addEventListener("click", submitGuess);
+      randomizeButton.addEventListener("click", randomizeAppearance);
+      exploreModeButton.addEventListener("click", () => setMode("explore"));
+      guessModeButton.addEventListener("click", () => setMode("guess"));
 
       pauseButton.addEventListener("click", () => {
         if (!state.running) {
