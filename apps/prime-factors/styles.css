@@ -1,105 +1,126 @@
-/* CSS Styles */
-
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    color: #f0f0f0;
-    background-color: #050505;
+:root {
+    color-scheme: dark;
+    --bg: #050505;
+    --panel: rgba(14, 14, 16, 0.92);
+    --border: #303033;
+    --text: #eeeeee;
+    --muted: #a5a5ab;
+    --control: #1f1f22;
+    --control-border: #4b4b50;
+    --focus: #f4f4f4;
 }
 
-#grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 5px;
-    padding: 5px;
-}
-
-.grid-item {
-    background-color: #111111;
-    border: 1px solid #3d3d3d;
-    padding: 5px;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 8px;
-}
-
-.grid-item:hover {
-    background-color: #292929;
-}
-
-.number {
-    font-size: 1.2em;
-    margin-bottom: 5px;
-}
-
-/* Reduce font size for numbers greater than 1 million */
-.grid-item.small-font .number {
-    font-size: 0.8em; /* Adjust this value as needed */
-}
-
-/* Default ball-container styles */
-.ball-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.ball {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    margin: 1px;
+* {
     box-sizing: border-box;
 }
 
-.ball:hover {
-    transition: box-shadow 0.2s;
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background: var(--bg);
 }
 
-/* Styles for 3 factors arranged with the third ball centered */
-.ball-container.two-rows-3-factors {
+#three-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.sidebar {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 20;
+    width: 220px;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+h1 {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.controls {
     display: grid;
-    grid-template-columns: repeat(2, auto);
-    grid-template-rows: auto auto;
-    justify-content: center;
-    align-items: center;
+    gap: 12px;
 }
 
-.ball-container.two-rows-3-factors .ball:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-.ball-container.two-rows-3-factors .ball:nth-child(2) {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-.ball-container.two-rows-3-factors .ball:nth-child(3) {
-    grid-column: 1 / 3; /* Span both columns */
-    grid-row: 2;
-    justify-self: center; /* Center the third ball horizontally */
-}
-
-/* Styles for 4 factors arranged in two rows */
-.ball-container.two-rows-4-factors {
+.control-field {
     display: grid;
-    grid-template-columns: repeat(2, auto);
-    grid-template-rows: repeat(2, auto);
-    justify-content: center;
-    justify-items: center;
-    align-items: center;
+    gap: 5px;
 }
 
-/* Tooltip styles */
-.tooltip {
-    position: absolute;
-    background-color: #333;
-    color: #fff;
-    padding: 3px 6px;
-    border-radius: 4px;
+.controls label {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.controls input,
+.controls select {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    color: var(--text);
+    background: var(--control);
+    border: 1px solid var(--control-border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.controls button {
+    height: 36px;
+    color: #050505;
+    background: var(--focus);
+    border: 1px solid var(--focus);
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.controls input:focus,
+.controls select:focus,
+.controls button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+#tooltip {
+    position: fixed;
+    z-index: 30;
+    display: none;
+    max-width: min(260px, calc(100vw - 16px));
+    padding: 5px 8px;
+    color: #ffffff;
+    background: #242426;
+    border: 1px solid #55555a;
+    border-radius: 5px;
     font-size: 12px;
+    line-height: 1.2;
     pointer-events: none;
-    z-index: 1000;
+    white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+    .sidebar {
+        top: 10px;
+        left: 10px;
+        width: min(220px, calc(100vw - 20px));
+        padding: 12px;
+    }
 }
