@@ -9,7 +9,7 @@
   --selected: #1c2422;
   --bad: #d64747;
   --shadow: 0 16px 36px rgba(31, 40, 37, 0.12);
-  --gap: clamp(7px, 2vw, 14px);
+  --gap: clamp(6px, 1.7vw, 12px);
 }
 
 body[data-mode="alt"],
@@ -302,12 +302,12 @@ body[data-mode="strict"] .card.is-hint {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(4px, 1.1vw, 10px);
+  gap: clamp(3px, 0.9vw, 8px);
 }
 
 .symbol {
   display: block;
-  height: 78%;
+  height: 82%;
   aspect-ratio: 1 / 2;
   background: var(--albedo);
   -webkit-mask: var(--shape-mask) center / contain no-repeat;
@@ -315,11 +315,15 @@ body[data-mode="strict"] .card.is-hint {
 }
 
 .symbols[data-count="3"] {
-  gap: clamp(3px, 0.8vw, 7px);
+  gap: clamp(2px, 0.65vw, 6px);
 }
 
 .symbols[data-count="3"] .symbol {
-  height: 72%;
+  height: 76%;
+}
+
+.classic-card {
+  padding: clamp(5px, 1.35vw, 12px);
 }
 
 .alt-card {
@@ -524,6 +528,10 @@ body[data-mode="strict"] .end-card {
 }
 
 @media (max-width: 520px) {
+  :root {
+    --gap: 5px;
+  }
+
   .app {
     padding: 10px;
     gap: 10px;
