@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eef2ed">
+    <title>SET Solo</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>SET Solo</h1>
+          <p><span data-set-count>0</span> sets</p>
+        </div>
+        <div class="top-actions">
+          <button class="hint-button is-hidden" type="button" data-hint aria-hidden="true" disabled>Hint</button>
+          <div class="mode-toggle" role="group" aria-label="Game mode">
+            <button type="button" data-mode-button="classic" aria-pressed="true">Default</button>
+            <button type="button" data-mode-button="alt" aria-pressed="false">Poké</button>
+          </div>
+          <label class="strict-toggle" data-strict-control hidden>
+            <input type="checkbox" data-strict-toggle>
+            <span>Strict</span>
+          </label>
+          <button class="new-game" type="button" data-new-game>New game</button>
+        </div>
+      </header>
+
+      <section class="board-wrap" aria-label="SET cards">
+        <div class="board" data-board></div>
+      </section>
+
+      <footer class="statusbar" aria-live="polite">
+        <div class="stat deck-stat" data-deck-stat>
+          <span>Deck</span>
+          <strong data-deck-count>0</strong>
+        </div>
+        <div class="stat timer-stat">
+          <span>Time</span>
+          <strong data-timer>00:00</strong>
+        </div>
+      </footer>
+
+      <section class="end-panel" data-end-panel hidden aria-modal="true" role="dialog" aria-labelledby="game-over-title">
+        <div class="end-card">
+          <div>
+            <h2 id="game-over-title">Game over</h2>
+            <p><span data-final-sets>0</span> sets in <span data-final-time>00:00</span></p>
+          </div>
+          <button class="new-game" type="button" data-new-game-end>New game</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

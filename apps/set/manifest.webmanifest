@@ -1,0 +1,8 @@
+{
+  "name": "SET Solo",
+  "short_name": "SET Solo",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#eef2ed",
+  "theme_color": "#eef2ed"
+}
