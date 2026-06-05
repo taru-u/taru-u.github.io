@@ -1,4 +1,4 @@
-const CACHE_NAME = "set-solo-v19";
+const CACHE_NAME = "set-solo-v20";
 const ALT_ASSETS = [];
 
 for (let first = 1; first <= 3; first += 1) {

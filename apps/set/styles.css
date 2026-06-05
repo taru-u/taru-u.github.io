@@ -527,7 +527,7 @@ body[data-mode="strict"] .end-card {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   :root {
     --gap: 5px;
   }
