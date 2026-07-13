@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101724" />
+    <title>Musemaster · Ear & chord practice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain"></div>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Musemaster home">
+          <span class="brand-mark">M</span>
+          <span>Musemaster</span>
+        </a>
+        <div class="midi-status" id="midi-status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="midi-status-text">Connecting MIDI…</span>
+        </div>
+      </header>
+
+      <nav class="mode-tabs" aria-label="Practice modes">
+        <button class="mode-tab is-active" data-mode="chords" type="button">
+          <span class="tab-index">01</span>
+          <span>Chord sprint</span>
+        </button>
+        <button class="mode-tab" data-mode="ear" type="button">
+          <span class="tab-index">02</span>
+          <span>Relative ear</span>
+        </button>
+      </nav>
+
+      <section class="game-layout">
+        <article class="game-card" id="chords-panel">
+          <div class="card-topline">
+            <span class="mode-label">Chord sprint</span>
+            <span class="round-pill" id="chord-round">Round 01</span>
+          </div>
+          <div class="session-switch" id="chord-session-switch">
+            <button class="is-active" data-session="practice" type="button">Practice</button>
+            <button data-session="test" type="button">Test</button>
+          </div>
+          <div class="test-readout" id="chord-test-readout"><strong id="chord-test-time">2:00</strong><strong><span id="chord-test-score">0</span> chords</strong></div>
+          <div class="chord-target-wrap">
+            <p class="instruction">Play this chord. Any voicing works; the bass note sets the inversion.</p>
+            <div class="chord-target" id="chord-target" aria-live="polite">C<span class="quality">maj</span></div>
+            <p class="target-detail" id="chord-detail">Root position · bass C</p>
+          </div>
+          <div class="feedback" id="chord-feedback" aria-live="polite">
+            <span class="feedback-symbol">↘</span>
+            <span>Play all notes together</span>
+          </div>
+          <div class="held-notes-area">
+            <p class="mini-label">Notes held</p>
+            <div class="note-chips" id="held-note-chips"><span class="empty-chips">Waiting for a key…</span></div>
+          </div>
+          <button class="primary-button" id="new-chord-button" type="button">New chord <span>→</span></button>
+        </article>
+
+        <article class="game-card ear-card is-hidden" id="ear-panel">
+          <div class="card-topline">
+            <span class="mode-label">Relative ear</span>
+            <span class="round-pill" id="ear-round">Round 01</span>
+          </div>
+          <div class="session-switch" id="ear-session-switch">
+            <button class="is-active" data-session="practice" type="button">Practice</button>
+            <button data-session="test" type="button">Test</button>
+          </div>
+          <div class="test-readout" id="ear-test-readout"><strong id="ear-test-time">2:00</strong><strong><span id="ear-test-score">0</span> notes</strong><strong><span id="ear-test-accuracy">—</span></strong></div>
+          <div class="ear-stage" id="ear-stage">
+            <p class="instruction" id="ear-instruction">Hear the named note, then find the next one by ear.</p>
+            <div class="ear-note-display" id="ear-note-display" aria-live="polite">Ready?</div>
+            <p class="target-detail" id="ear-detail">Octave does not matter.</p>
+          </div>
+          <div class="feedback" id="ear-feedback" aria-live="polite">
+            <span class="feedback-symbol">♪</span>
+            <span>Start when you are ready</span>
+          </div>
+          <div class="ear-stats">
+            <div><span class="mini-label">Correct</span><strong id="ear-correct">0</strong></div>
+            <div><span class="mini-label">Attempts</span><strong id="ear-attempts">0</strong></div>
+            <div><span class="mini-label">Accuracy</span><strong id="ear-accuracy">—</strong></div>
+          </div>
+          <button class="primary-button" id="start-ear-button" type="button">Start listening <span>→</span></button>
+        </article>
+
+        <aside class="settings-card">
+          <div class="settings-title-row">
+            <h2>Session settings</h2>
+            <span class="settings-icon">⌘</span>
+          </div>
+          <div id="chord-settings">
+            <p class="setting-heading">Preset</p>
+            <div class="preset-grid" id="chord-presets">
+              <button data-preset="light" type="button">Light</button>
+              <button data-preset="medium" type="button">Medium</button>
+              <button data-preset="hard" type="button">Hard</button>
+              <button data-preset="expert" type="button">Expert</button>
+            </div>
+            <p class="setting-heading">Chord types</p>
+            <div class="check-grid">
+              <label><input type="checkbox" name="quality" value="maj" checked /><span>Major</span></label>
+              <label><input type="checkbox" name="quality" value="min" checked /><span>Minor</span></label>
+              <label><input type="checkbox" name="quality" value="dim" /><span>Diminished °</span></label>
+              <label><input type="checkbox" name="quality" value="aug" /><span>Augmented</span></label>
+              <label><input type="checkbox" name="quality" value="sus2" /><span>Sus 2</span></label>
+              <label><input type="checkbox" name="quality" value="sus4" /><span>Sus 4</span></label>
+              <label><input type="checkbox" name="quality" value="add2" /><span>Add 2</span></label>
+              <label><input type="checkbox" name="quality" value="7" checked /><span>Dominant 7</span></label>
+              <label><input type="checkbox" name="quality" value="maj7" /><span>Major 7</span></label>
+              <label><input type="checkbox" name="quality" value="min7" /><span>Minor 7</span></label>
+              <label><input type="checkbox" name="quality" value="dim7" /><span>Diminished 7</span></label>
+              <label><input type="checkbox" name="quality" value="minMaj7" /><span>MiMa7</span></label>
+              <label><input type="checkbox" name="quality" value="halfDim7" /><span>Half-dim ø7</span></label>
+              <label><input type="checkbox" name="quality" value="9" /><span>Dominant 9</span></label>
+              <label><input type="checkbox" name="quality" value="maj9" /><span>Major 9</span></label>
+              <label><input type="checkbox" name="quality" value="min9" /><span>Minor 9</span></label>
+            </div>
+            <p class="setting-heading inversions-heading">Inversions</p>
+            <div class="segmented" id="inversion-controls">
+              <label><input type="checkbox" value="0" checked /><span>Root<br />5/3</span></label>
+              <label><input type="checkbox" value="1" checked /><span>1st<br />6/3</span></label>
+              <label><input type="checkbox" value="2" checked /><span>2nd<br />6/4</span></label>
+              <label><input type="checkbox" value="3" /><span>3rd<br />4/2</span></label>
+            </div>
+            <p class="setting-heading inversions-heading">After the chord name</p>
+            <div class="segmented two-way" id="inversion-notation-controls">
+              <label><input type="radio" name="inversion-notation" value="ordinal" /><span>Nth inversion</span></label>
+              <label><input type="radio" name="inversion-notation" value="figure" checked /><span>Figured bass</span></label>
+              <label><input type="radio" name="inversion-notation" value="both" /><span>Both</span></label>
+            </div>
+            <p class="settings-note">Only valid inversions for the selected chord are drawn.</p>
+          </div>
+          <div class="is-hidden" id="ear-settings">
+            <div id="ear-practice-settings">
+              <p class="setting-heading">Melody range</p>
+              <div class="range-readout"><span>C3</span><span>C6</span></div>
+              <p class="setting-heading inversions-heading">Intervals</p>
+              <div class="interval-grid" id="ear-intervals">
+                <label><input type="checkbox" name="ear-interval" value="1" checked /><span>m2</span></label>
+                <label><input type="checkbox" name="ear-interval" value="2" checked /><span>M2</span></label>
+                <label><input type="checkbox" name="ear-interval" value="3" checked /><span>m3</span></label>
+                <label><input type="checkbox" name="ear-interval" value="4" checked /><span>M3</span></label>
+                <label><input type="checkbox" name="ear-interval" value="5" checked /><span>P4</span></label>
+                <label><input type="checkbox" name="ear-interval" value="6" checked /><span>TT</span></label>
+                <label><input type="checkbox" name="ear-interval" value="7" checked /><span>P5</span></label>
+                <label><input type="checkbox" name="ear-interval" value="8" checked /><span>m6</span></label>
+                <label><input type="checkbox" name="ear-interval" value="9" checked /><span>M6</span></label>
+                <label><input type="checkbox" name="ear-interval" value="10" checked /><span>m7</span></label>
+                <label><input type="checkbox" name="ear-interval" value="11" checked /><span>M7</span></label>
+                <label><input type="checkbox" name="ear-interval" value="12" checked /><span>P8</span></label>
+                <label><input type="checkbox" name="ear-interval" value="13" checked /><span>m9</span></label>
+                <label><input type="checkbox" name="ear-interval" value="14" checked /><span>M9</span></label>
+              </div>
+            </div>
+            <div class="is-hidden" id="ear-test-settings">
+              <p class="setting-heading">Test difficulty</p>
+              <div class="preset-grid two-up" id="ear-test-difficulties">
+                <button class="is-active" data-interval="7" type="button">I · P5</button>
+                <button data-interval="14" type="button">II · M9</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="keyboard-section" aria-label="Piano keyboard">
+        <div class="keyboard-meta">
+          <div><p class="mini-label">Live keyboard</p><p class="keyboard-help">Your MIDI controller and these keys both play sound.</p></div>
+          <span id="last-note" class="last-note">No note yet</span>
+        </div>
+        <div class="piano" id="piano" role="group" aria-label="Clickable piano keyboard"></div>
+      </section>
+
+      <footer>
+        <span>Web MIDI + local synthesis</span>
+        <span>Sound continues across every mode.</span>
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
