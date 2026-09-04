@@ -18,15 +18,19 @@
             </div>
             <div class="control-field">
                 <label for="numbersPerLoopInput">Coil Number</label>
-                <input id="numbersPerLoopInput" name="numbersPerLoop" type="number" value="24" min="6" max="96" step="1">
+                <input id="numbersPerLoopInput" name="numbersPerLoop" type="number" value="30" min="6" max="96" step="1">
             </div>
             <div class="control-field">
                 <label for="colorModeSelect">Colors</label>
                 <select id="colorModeSelect" name="colorMode">
                     <option value="simple">Simple Colors</option>
-                    <option value="extended">Extended Colors</option>
+                    <option value="extended" selected>Extended Colors</option>
                 </select>
             </div>
+            <label class="checkbox-field">
+                <input id="showTunnelLabelsInput" name="showTunnelLabels" type="checkbox" checked>
+                <span>Coil Labels</span>
+            </label>
             <button type="submit">Generate</button>
         </form>
     </aside>

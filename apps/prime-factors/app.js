@@ -19,39 +19,51 @@ const SIMPLE_COLOR_ENTRIES = [
 const EXTENDED_COLOR_ENTRIES = [
     ...SIMPLE_COLOR_ENTRIES,
     [41n, "#ef8686"],
-    [43n, "#ef86ef"],
-    [47n, "#89bcef"],
-    [53n, "#89ef89"],
-    [59n, "#efefaa"],
-    [61n, "#efb989"],
-    [67n, "#b6efef"],
-    [71n, "#b589ef"],
-    [73n, "#8383ef"],
-    [79n, "#c9ef89"],
+    [43n, "#efb989"],
+    [47n, "#efefaa"],
+    [53n, "#c9ef89"],
+    [59n, "#89ef89"],
+    [61n, "#b6efef"],
+    [67n, "#89bcef"],
+    [71n, "#8383ef"],
+    [73n, "#b589ef"],
+    [79n, "#ef86ef"],
     [83n, "#a0a0a0"],
     [89n, "#6b0000"],
-    [97n, "#00366b"],
-    [101n, "#006b6b"],
-    [103n, "#006b00"],
-    [107n, "#406b00"],
-    [109n, "#6b6b00"],
-    [113n, "#6b006b"],
-    [127n, "#2d006b"],
-    [131n, "#00006b"],
-    [137n, "#282828"],
+    [97n, "#684600"],
+    [101n, "#6b6b00"],
+    [103n, "#406b00"],
+    [107n, "#006b00"],
+    [109n, "#006b6b"],
+    [113n, "#00366b"],
+    [127n, "#00006b"],
+    [131n, "#2d006b"],
+    [137n, "#6b006b"],
+    [139n, "#282828"],
 ];
 
 const COLOR_PALETTES = {
     simple: new Map(SIMPLE_COLOR_ENTRIES.map(([factor, color]) => [factor.toString(), color])),
     extended: new Map(EXTENDED_COLOR_ENTRIES.map(([factor, color]) => [factor.toString(), color])),
 };
-const PRIME_COLOR_SEQUENCES = {
-    simple: SIMPLE_COLOR_ENTRIES.filter(([factor]) => factor !== 1n).map(([, color]) => color),
-    extended: EXTENDED_COLOR_ENTRIES.filter(([factor]) => factor !== 1n).map(([, color]) => color),
+const DIRECT_PRIME_COLOR_COUNTS = {
+    simple: SIMPLE_COLOR_ENTRIES.filter(([factor]) => factor !== 1n).length,
+    extended: EXTENDED_COLOR_ENTRIES.filter(([factor]) => factor !== 1n).length,
 };
+const PRIME_COLOR_SEQUENCES = {
+    simple: [...SIMPLE_COLOR_ENTRIES.map(([, color]) => color), "#000000"],
+    extended: [...EXTENDED_COLOR_ENTRIES.map(([, color]) => color), "#000000"],
+};
+const HYBRID_SPLIT_AXIS = Object.freeze({
+    HORIZONTAL: "horizontal",
+    VERTICAL: "vertical",
+});
 
 const MAX_PRIME = 5_000_000;
+const PRIME_INDEX_MAX = 27_000_000;
+const PRIME_INDEX_ESTIMATE_SERIES_TERMS = 6;
 const MAX_PRIME_BIGINT = BigInt(MAX_PRIME);
+const PRIME_INDEX_MAX_BIGINT = BigInt(PRIME_INDEX_MAX);
 const MAX_PRIME_SQUARED = MAX_PRIME_BIGINT * MAX_PRIME_BIGINT;
 const DETERMINISTIC_MILLER_RABIN_MAX = (1n << 64n) - 1n;
 const FACTORIZATION_CACHE_MAX_ENTRIES = 8192;
@@ -75,6 +87,8 @@ const FACTOR_STATUS = Object.freeze({
 const TUNNEL_FORWARD_LOOP_COUNT = 20;
 const TUNNEL_BACK_BUFFER_LOOP_COUNT = 5;
 const TUNNEL_LOOP_COUNT = TUNNEL_FORWARD_LOOP_COUNT + TUNNEL_BACK_BUFFER_LOOP_COUNT;
+const TUNNEL_INITIAL_FORWARD_LOOP_COUNT = 3;
+const TUNNEL_INITIAL_BACK_BUFFER_LOOP_COUNT = 2;
 const TUNNEL_RADIUS = 34;
 const TUNNEL_PITCH = 14;
 const TUNNEL_MAX_BALL_RADIUS = 1.65;
@@ -120,12 +134,15 @@ const TUNNEL_KEY_REPEAT_PER_SECOND = 5;
 const TUNNEL_SHIFT_REPEAT_PER_SECOND = 10;
 const TUNNEL_WHEEL_STEP_COOLDOWN = 0.16;
 const TWO_PI = Math.PI * 2;
+const MAX_RENDER_PIXEL_RATIO = 1.5;
+const TUNNEL_MOTION_EPSILON = 0.0005;
 
 const canvas = document.getElementById("three-canvas");
 const controls = document.getElementById("controls");
 const startNumberInput = document.getElementById("startNumberInput");
 const numbersPerLoopInput = document.getElementById("numbersPerLoopInput");
 const colorModeSelect = document.getElementById("colorModeSelect");
+const showTunnelLabelsInput = document.getElementById("showTunnelLabelsInput");
 const tooltip = document.getElementById("tooltip");
 
 const primesArray = [];
@@ -134,6 +151,7 @@ const factorizationCache = new Map();
 const asyncCofactorFactorizations = new Map();
 const pendingAsyncCofactors = new Set();
 const asyncCofactorQueue = [];
+const asyncTunnelCoilQueue = [];
 const tunnelItems = [];
 let sphereMeshes = [];
 let visibleMeshes = [];
@@ -150,23 +168,28 @@ let tunnelTargetTravel = 0;
 let tunnelRotation = 0;
 let tunnelTargetRotation = 0;
 let tunnelAnchorIndex = 0;
-let activeNumbersPerLoop = 24;
-let activeColorMode = "simple";
+let activeNumbersPerLoop = 30;
+let activeColorMode = "extended";
+let showTunnelNumberLabels = true;
 let lastTunnelTouchY = null;
 let previousRenderTime = 0;
+let renderFrameId = null;
+let asyncTunnelBuildToken = 0;
+let asyncTunnelBuildFrameId = null;
+let asyncTunnelBuildTimerId = null;
 let nextWheelStepTime = 0;
 const activeTunnelKeys = new Map();
 
-generatePrimesUpTo(MAX_PRIME);
+generatePrimesUpTo(PRIME_INDEX_MAX);
 
 const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
     alpha: true,
-    preserveDrawingBuffer: true,
+    preserveDrawingBuffer: false,
 });
 renderer.setClearColor(0x000000, 0);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_RENDER_PIXEL_RATIO));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
@@ -192,7 +215,7 @@ scene.add(fillLight);
 const tunnelHeadLight = new THREE.PointLight(0xffffff, 2.4, 260, 1.2);
 scene.add(tunnelHeadLight);
 
-const sphereGeometry = new THREE.SphereGeometry(1, 32, 18);
+const sphereGeometry = new THREE.SphereGeometry(1, 24, 14);
 const selectedOutlineMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     side: THREE.BackSide,
@@ -214,6 +237,7 @@ const probablePrimeWireframeMaterial = new THREE.MeshBasicMaterial({
     depthWrite: false,
 });
 const materialCache = new Map();
+const generalOctantInvalidCandidateCache = new Map();
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
@@ -279,7 +303,7 @@ window.primeFactors3d = {
 
 resizeRenderer();
 rebuildCurrentMode(false);
-renderer.setAnimationLoop(render);
+requestRender();
 
 controls.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -289,6 +313,11 @@ controls.addEventListener("submit", (event) => {
 colorModeSelect.addEventListener("change", () => {
     activeColorMode = getRequestedColorMode();
     updateFactorMaterials();
+});
+
+showTunnelLabelsInput.addEventListener("change", () => {
+    showTunnelNumberLabels = getRequestedShowTunnelNumberLabels();
+    updateTunnelNumberLabels();
 });
 
 window.addEventListener("resize", () => {
@@ -313,6 +342,7 @@ window.addEventListener("keydown", handleTunnelKeydown);
 window.addEventListener("keyup", handleTunnelKeyup);
 window.addEventListener("blur", () => {
     activeTunnelKeys.clear();
+    requestRender();
 });
 
 canvas.addEventListener("touchstart", (event) => {
@@ -358,7 +388,10 @@ function generatePrimesUpTo(max) {
     let index = 1;
     for (let i = 2; i <= max; i += 1) {
         if (sieve[i]) {
-            primesArray.push(i);
+            if (i <= MAX_PRIME) {
+                primesArray.push(i);
+            }
+
             primeIndices.set(i, index);
             index += 1;
         }
@@ -395,21 +428,30 @@ function getRequestedColorMode() {
     return colorModeSelect.value === "extended" ? "extended" : "simple";
 }
 
+function getRequestedShowTunnelNumberLabels() {
+    return showTunnelLabelsInput.checked;
+}
+
 function rebuildCurrentMode(resetScroll) {
     const startNumber = parseStartNumber(startNumberInput.value);
 
     activeNumbersPerLoop = getRequestedNumbersPerLoop();
     activeColorMode = getRequestedColorMode();
+    showTunnelNumberLabels = getRequestedShowTunnelNumberLabels();
     numbersPerLoopInput.value = String(activeNumbersPerLoop);
     colorModeSelect.value = activeColorMode;
+    showTunnelLabelsInput.checked = showTunnelNumberLabels;
     generateTunnel(startNumber, activeNumbersPerLoop);
 
     if (resetScroll) {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }
+
+    requestRender();
 }
 
 function generateTunnel(startNumber, numbersPerLoop) {
+    cancelAsyncTunnelBuild();
     clearDynamicContent();
     tunnelStartNumber = startNumber < 1n ? 1n : startNumber;
     tunnelTravel = 0;
@@ -421,12 +463,21 @@ function generateTunnel(startNumber, numbersPerLoop) {
     numbersPerLoopInput.value = String(numbersPerLoop);
 
     const totalNumbers = numbersPerLoop * TUNNEL_LOOP_COUNT;
+    const windowStartIndex = tunnelAnchorIndex;
+    const windowEndIndex = windowStartIndex + totalNumbers;
+    const initialMinIndex = getInitialTunnelBuildMinIndex(numbersPerLoop);
+    const initialMaxIndex = getInitialTunnelBuildMaxIndex(numbersPerLoop);
 
-    for (let index = 0; index < totalNumbers; index += 1) {
-        createTunnelItem(tunnelAnchorIndex + index);
+    for (let globalIndex = windowStartIndex; globalIndex < windowEndIndex; globalIndex += 1) {
+        createTunnelItem(
+            globalIndex,
+            !isInitialTunnelBuildIndex(globalIndex, initialMinIndex, initialMaxIndex),
+        );
     }
 
-    currentEndNumber = getTunnelValueForIndex(tunnelAnchorIndex + totalNumbers - 1);
+    queueRemainingTunnelCoils(windowStartIndex, windowEndIndex, initialMinIndex, initialMaxIndex, numbersPerLoop);
+    currentEndNumber = getTunnelValueForIndex(windowEndIndex - 1);
+    scheduleAsyncTunnelBuild();
 }
 
 function clearDynamicContent() {
@@ -442,6 +493,106 @@ function clearDynamicContent() {
     clearSelectedDetailContent();
     setHoveredMesh(null);
     hideTooltip();
+}
+
+function getInitialTunnelBuildMinIndex(numbersPerLoop) {
+    const backBufferNumbers = numbersPerLoop * TUNNEL_INITIAL_BACK_BUFFER_LOOP_COUNT;
+    return Math.max(getTunnelMinimumIndex(), getSelectedTunnelIndex() - backBufferNumbers);
+}
+
+function getInitialTunnelBuildMaxIndex(numbersPerLoop) {
+    return getSelectedTunnelIndex() + numbersPerLoop * TUNNEL_INITIAL_FORWARD_LOOP_COUNT;
+}
+
+function isInitialTunnelBuildIndex(globalIndex, initialMinIndex, initialMaxIndex) {
+    return globalIndex >= initialMinIndex && globalIndex < initialMaxIndex;
+}
+
+function queueRemainingTunnelCoils(windowStartIndex, windowEndIndex, initialMinIndex, initialMaxIndex, numbersPerLoop) {
+    const firstFrontCoilIndex = Math.min(windowEndIndex, initialMaxIndex);
+
+    for (let coilStartIndex = firstFrontCoilIndex; coilStartIndex < windowEndIndex; coilStartIndex += numbersPerLoop) {
+        asyncTunnelCoilQueue.push({
+            startIndex: coilStartIndex,
+            endIndex: Math.min(coilStartIndex + numbersPerLoop, windowEndIndex),
+        });
+    }
+
+    const firstBackCoilEndIndex = Math.max(windowStartIndex, initialMinIndex);
+
+    for (
+        let coilStartIndex = firstBackCoilEndIndex - numbersPerLoop;
+        coilStartIndex >= windowStartIndex;
+        coilStartIndex -= numbersPerLoop
+    ) {
+        asyncTunnelCoilQueue.push({
+            startIndex: coilStartIndex,
+            endIndex: Math.min(coilStartIndex + numbersPerLoop, windowEndIndex),
+        });
+    }
+}
+
+function scheduleAsyncTunnelBuild() {
+    if (
+        asyncTunnelCoilQueue.length === 0
+        || asyncTunnelBuildFrameId !== null
+        || asyncTunnelBuildTimerId !== null
+    ) {
+        return;
+    }
+
+    const buildToken = asyncTunnelBuildToken;
+
+    asyncTunnelBuildFrameId = requestAnimationFrame(() => {
+        asyncTunnelBuildFrameId = null;
+
+        if (buildToken !== asyncTunnelBuildToken) {
+            return;
+        }
+
+        asyncTunnelBuildTimerId = setTimeout(() => {
+            asyncTunnelBuildTimerId = null;
+            buildNextTunnelCoil(buildToken);
+        }, 0);
+    });
+}
+
+function buildNextTunnelCoil(buildToken) {
+    if (buildToken !== asyncTunnelBuildToken) {
+        return;
+    }
+
+    const coil = asyncTunnelCoilQueue.shift();
+
+    if (!coil) {
+        return;
+    }
+
+    for (let globalIndex = coil.startIndex; globalIndex < coil.endIndex; globalIndex += 1) {
+        const item = getTunnelItemByIndex(globalIndex);
+
+        if (item && !item.contentReady) {
+            updateTunnelItemContent(item, globalIndex);
+        }
+    }
+
+    requestRender();
+    scheduleAsyncTunnelBuild();
+}
+
+function cancelAsyncTunnelBuild() {
+    asyncTunnelBuildToken += 1;
+    asyncTunnelCoilQueue.length = 0;
+
+    if (asyncTunnelBuildFrameId !== null) {
+        cancelAnimationFrame(asyncTunnelBuildFrameId);
+        asyncTunnelBuildFrameId = null;
+    }
+
+    if (asyncTunnelBuildTimerId !== null) {
+        clearTimeout(asyncTunnelBuildTimerId);
+        asyncTunnelBuildTimerId = null;
+    }
 }
 
 function disposeMarkedObject(object) {
@@ -463,37 +614,30 @@ function disposeMarkedObject(object) {
     });
 }
 
-function createTunnelItem(globalIndex) {
+function createTunnelItem(globalIndex, deferContent = false) {
     const group = new THREE.Group();
 
     const item = {
-        value: 1n,
+        value: getTunnelValueForIndex(globalIndex),
         factors: [],
         packedFactors: [],
         group,
         meshes: [],
         label: null,
         globalIndex,
+        contentReady: false,
     };
 
-    updateTunnelItemContent(item, globalIndex);
+    if (!deferContent) {
+        updateTunnelItemContent(item, globalIndex);
+    }
+
     contentGroup.add(group);
     tunnelItems.push(item);
 }
 
 function updateTunnelItemContent(item, globalIndex) {
-    for (const child of [...item.group.children]) {
-        if (child.isMesh) {
-            const meshIndex = sphereMeshes.indexOf(child);
-
-            if (meshIndex !== -1) {
-                sphereMeshes.splice(meshIndex, 1);
-            }
-        }
-
-        disposeMarkedObject(child);
-        item.group.remove(child);
-    }
+    clearTunnelItemContent(item);
 
     const value = getTunnelValueForIndex(globalIndex);
     const factors = getPrimeFactors(value);
@@ -504,6 +648,7 @@ function updateTunnelItemContent(item, globalIndex) {
     item.packedFactors = [];
     item.meshes = [];
     item.label = null;
+    item.contentReady = true;
 
     const count = factors.length;
     const packedFactors = getTunnelPackedFactors(factors);
@@ -520,9 +665,66 @@ function updateTunnelItemContent(item, globalIndex) {
         item.meshes.push(mesh);
     }
 
-    const label = createNumberSprite(formatBigIntWithCommas(value));
+    if (showTunnelNumberLabels) {
+        addTunnelItemLabel(item);
+    }
+}
+
+function clearTunnelItemContent(item) {
+    for (const child of [...item.group.children]) {
+        if (child.isMesh) {
+            const meshIndex = sphereMeshes.indexOf(child);
+
+            if (meshIndex !== -1) {
+                sphereMeshes.splice(meshIndex, 1);
+            }
+        }
+
+        disposeMarkedObject(child);
+        item.group.remove(child);
+    }
+
+    item.packedFactors = [];
+    item.factors = [];
+    item.meshes = [];
+    item.label = null;
+    item.contentReady = false;
+}
+
+function addTunnelItemLabel(item) {
+    if (item.label) {
+        return;
+    }
+
+    const label = createNumberSprite(formatBigIntWithCommas(item.value));
     item.group.add(label);
     item.label = label;
+}
+
+function removeTunnelItemLabel(item) {
+    if (!item.label) {
+        return;
+    }
+
+    disposeMarkedObject(item.label);
+    item.group.remove(item.label);
+    item.label = null;
+}
+
+function updateTunnelNumberLabels() {
+    for (const item of tunnelItems) {
+        if (!item.contentReady) {
+            continue;
+        }
+
+        if (showTunnelNumberLabels) {
+            addTunnelItemLabel(item);
+        } else {
+            removeTunnelItemLabel(item);
+        }
+    }
+
+    requestRender();
 }
 
 function getTunnelBallRadius(factors) {
@@ -1467,6 +1669,7 @@ function handleAsyncCofactorMessage(event) {
     refreshFactorizationsForResolvedCofactor(cofactorKey);
     scheduleVisibleCompositeCofactors();
     pumpAsyncCofactorQueue();
+    requestRender();
 }
 
 function handleAsyncCofactorError(error) {
@@ -1478,6 +1681,7 @@ function handleAsyncCofactorError(error) {
         asyncCofactorFactorizations.set(cofactorKey, { status: "unknown" });
         activeAsyncCofactorTask = null;
         refreshFactorizationsForResolvedCofactor(cofactorKey);
+        requestRender();
     }
 
     if (factorizationWorker) {
@@ -1496,7 +1700,7 @@ function createAsyncResolvedFactor(value) {
 }
 
 function getAsyncResolvedPrimeStatus(value) {
-    if (value <= MAX_PRIME_BIGINT && primeIndices.has(Number(value))) {
+    if (value <= PRIME_INDEX_MAX_BIGINT && primeIndices.has(Number(value))) {
         return FACTOR_STATUS.EXACT_PRIME;
     }
 
@@ -1550,6 +1754,7 @@ function refreshVisibleFactorizationsForCofactor(cofactorKey) {
     if (refreshedItem || selectedNeedsRefresh) {
         setHoveredMesh(null);
         hideTooltip();
+        requestRender();
     }
 }
 
@@ -1699,9 +1904,15 @@ function getMaterialForFactor(factor) {
         return materialCache.get(cacheKey);
     }
 
-    const material = colorScheme.kind === "hybrid"
-        ? createHybridFactorMaterial(colorScheme.topColor, colorScheme.bottomColor)
-        : createSingleFactorMaterial(colorScheme.color);
+    let material;
+
+    if (colorScheme.kind === "hybrid") {
+        material = createHybridFactorMaterial(colorScheme.firstColor, colorScheme.secondColor, colorScheme.splitAxis);
+    } else if (colorScheme.kind === "octant") {
+        material = createOctantFactorMaterial(colorScheme.colors);
+    } else {
+        material = createSingleFactorMaterial(colorScheme.color);
+    }
 
     materialCache.set(cacheKey, material);
     return material;
@@ -1718,7 +1929,7 @@ function createSingleFactorMaterial(color) {
     });
 }
 
-function createHybridFactorMaterial(topColor, bottomColor) {
+function createHybridFactorMaterial(firstColor, secondColor, splitAxis) {
     const material = new THREE.MeshStandardMaterial({
         color: "#ffffff",
         roughness: 0.42,
@@ -1726,8 +1937,13 @@ function createHybridFactorMaterial(topColor, bottomColor) {
     });
 
     material.onBeforeCompile = (shader) => {
-        shader.uniforms.topHemisphereColor = { value: new THREE.Color(topColor) };
-        shader.uniforms.bottomHemisphereColor = { value: new THREE.Color(bottomColor) };
+        shader.uniforms.firstHemisphereColor = { value: new THREE.Color(firstColor) };
+        shader.uniforms.secondHemisphereColor = { value: new THREE.Color(secondColor) };
+        shader.uniforms.splitAxisSelector = {
+            value: splitAxis === HYBRID_SPLIT_AXIS.VERTICAL
+                ? new THREE.Vector3(-1, 0, 0)
+                : new THREE.Vector3(0, 1, 0),
+        };
         shader.vertexShader = `
 varying vec3 vFactorObjectPosition;
 ${shader.vertexShader}
@@ -1737,24 +1953,77 @@ ${shader.vertexShader}
 vFactorObjectPosition = transformed;`,
         );
         shader.fragmentShader = `
-uniform vec3 topHemisphereColor;
-uniform vec3 bottomHemisphereColor;
+uniform vec3 firstHemisphereColor;
+uniform vec3 secondHemisphereColor;
+uniform vec3 splitAxisSelector;
 varying vec3 vFactorObjectPosition;
 ${shader.fragmentShader}
 `.replace(
             "#include <color_fragment>",
             `#include <color_fragment>
-diffuseColor.rgb *= mix(bottomHemisphereColor, topHemisphereColor, step(0.0, vFactorObjectPosition.y));`,
+diffuseColor.rgb *= mix(secondHemisphereColor, firstHemisphereColor, step(0.0, dot(vFactorObjectPosition, splitAxisSelector)));`,
         );
     };
-    material.customProgramCacheKey = () => "factor-hybrid-hemisphere";
+    material.customProgramCacheKey = () => `factor-hybrid-hemisphere:${splitAxis}`;
+    return material;
+}
+
+function createOctantFactorMaterial(colors) {
+    const material = new THREE.MeshStandardMaterial({
+        color: "#ffffff",
+        roughness: 0.42,
+        metalness: 0.08,
+    });
+
+    material.onBeforeCompile = (shader) => {
+        shader.uniforms.octantColor1 = { value: new THREE.Color(colors[0]) };
+        shader.uniforms.octantColor2 = { value: new THREE.Color(colors[1]) };
+        shader.uniforms.octantColor3 = { value: new THREE.Color(colors[2]) };
+        shader.uniforms.octantColor4 = { value: new THREE.Color(colors[3]) };
+        shader.vertexShader = `
+varying vec3 vFactorObjectPosition;
+${shader.vertexShader}
+`.replace(
+            "#include <begin_vertex>",
+            `#include <begin_vertex>
+vFactorObjectPosition = transformed;`,
+        );
+        shader.fragmentShader = `
+uniform vec3 octantColor1;
+uniform vec3 octantColor2;
+uniform vec3 octantColor3;
+uniform vec3 octantColor4;
+varying vec3 vFactorObjectPosition;
+${shader.fragmentShader}
+`.replace(
+            "#include <color_fragment>",
+            `#include <color_fragment>
+vec3 canonicalFactorPosition = vFactorObjectPosition.z >= 0.0 ? vFactorObjectPosition : -vFactorObjectPosition;
+vec3 octantColor = octantColor1;
+if (canonicalFactorPosition.y < 0.0 && canonicalFactorPosition.x >= 0.0) {
+    octantColor = octantColor2;
+} else if (canonicalFactorPosition.y < 0.0 && canonicalFactorPosition.x < 0.0) {
+    octantColor = octantColor3;
+} else if (canonicalFactorPosition.y >= 0.0 && canonicalFactorPosition.x < 0.0) {
+    octantColor = octantColor4;
+}
+diffuseColor.rgb *= octantColor;`,
+        );
+    };
+    material.customProgramCacheKey = () => "factor-octant-polar-mirrored";
     return material;
 }
 
 function getColorSchemeCacheKey(colorScheme) {
-    return colorScheme.kind === "hybrid"
-        ? `hybrid:${colorScheme.topColor}:${colorScheme.bottomColor}`
-        : `single:${colorScheme.color}`;
+    if (colorScheme.kind === "hybrid") {
+        return `hybrid:${colorScheme.splitAxis}:${colorScheme.firstColor}:${colorScheme.secondColor}`;
+    }
+
+    if (colorScheme.kind === "octant") {
+        return `octant:${colorScheme.colors.join(":")}`;
+    }
+
+    return `single:${colorScheme.color}`;
 }
 
 function updateFactorMaterials() {
@@ -1767,6 +2036,8 @@ function updateFactorMaterials() {
             child.material = getMaterialForFactor(child.userData.factor);
         }
     });
+
+    requestRender();
 }
 
 function getColorSchemeForFactor(factor) {
@@ -1799,41 +2070,199 @@ function getColorSchemeForFactor(factor) {
     }
 
     const colorSequence = PRIME_COLOR_SEQUENCES[activeColorMode] ?? PRIME_COLOR_SEQUENCES.simple;
-    const pairIndex = primeIndex - colorSequence.length - 1;
-    const pair = getColorPairByIndex(pairIndex, colorSequence.length);
+    const directPrimeColorCount = DIRECT_PRIME_COLOR_COUNTS[activeColorMode] ?? DIRECT_PRIME_COLOR_COUNTS.simple;
+    const generatedIndex = primeIndex - directPrimeColorCount - 1;
+    const generatedScheme = getGeneratedColorSchemeByIndex(generatedIndex, colorSequence);
 
-    if (pair === null) {
+    if (generatedScheme === null) {
         return {
             kind: "single",
             color: "#000000",
         };
     }
 
+    return generatedScheme;
+}
+
+function getGeneratedColorSchemeByIndex(generatedIndex, colorSequence) {
+    const colorCount = colorSequence.length;
+    const pairCount = getOrderedColorPairCount(colorCount);
+
+    if (generatedIndex < 0 || pairCount <= 0) {
+        return null;
+    }
+
+    let stageIndex = generatedIndex;
+
+    if (stageIndex < pairCount) {
+        return createHybridColorScheme(
+            HYBRID_SPLIT_AXIS.HORIZONTAL,
+            getOrderedColorPairByIndex(stageIndex, colorCount),
+            colorSequence,
+        );
+    }
+
+    stageIndex -= pairCount;
+
+    if (stageIndex < pairCount) {
+        return createHybridColorScheme(
+            HYBRID_SPLIT_AXIS.VERTICAL,
+            getOrderedColorPairByIndex(stageIndex, colorCount),
+            colorSequence,
+        );
+    }
+
+    stageIndex -= pairCount;
+
+    if (stageIndex < pairCount) {
+        const pair = getOrderedColorPairByIndex(stageIndex, colorCount);
+
+        return pair === null
+            ? null
+            : createOctantColorScheme([pair[0], pair[1], pair[0], pair[1]], colorSequence);
+    }
+
+    stageIndex -= pairCount;
+
+    return createOctantColorScheme(
+        getGeneralOctantColorIndicesByIndex(stageIndex, colorCount),
+        colorSequence,
+    );
+}
+
+function createHybridColorScheme(splitAxis, pair, colorSequence) {
+    if (pair === null) {
+        return null;
+    }
+
     return {
         kind: "hybrid",
-        topColor: colorSequence[pair[0]],
-        bottomColor: colorSequence[pair[1]],
+        splitAxis,
+        firstColor: colorSequence[pair[0]],
+        secondColor: colorSequence[pair[1]],
     };
 }
 
-function getColorPairByIndex(pairIndex, colorCount) {
+function createOctantColorScheme(colorIndices, colorSequence) {
+    if (
+        colorIndices === null
+        || colorIndices.some((colorIndex) => colorSequence[colorIndex] === undefined)
+    ) {
+        return null;
+    }
+
+    return {
+        kind: "octant",
+        colors: colorIndices.map((colorIndex) => colorSequence[colorIndex]),
+    };
+}
+
+function getOrderedColorPairCount(colorCount) {
+    return colorCount * (colorCount - 1);
+}
+
+function getOrderedColorPairByIndex(pairIndex, colorCount) {
     if (pairIndex < 0 || colorCount < 2) {
         return null;
     }
 
-    let remaining = pairIndex;
+    const first = Math.floor(pairIndex / (colorCount - 1));
+    const secondOffset = pairIndex % (colorCount - 1);
 
-    for (let first = 0; first < colorCount - 1; first += 1) {
-        const rowLength = colorCount - first - 1;
-
-        if (remaining < rowLength) {
-            return [first, first + 1 + remaining];
-        }
-
-        remaining -= rowLength;
+    if (first >= colorCount) {
+        return null;
     }
 
-    return null;
+    const second = secondOffset < first ? secondOffset : secondOffset + 1;
+    return [first, second];
+}
+
+function getGeneralOctantColorIndicesByIndex(generalIndex, colorCount) {
+    const totalCandidateCount = colorCount ** 4;
+    const invalidCandidates = getGeneralOctantInvalidCandidates(colorCount);
+    const validCandidateCount = totalCandidateCount - invalidCandidates.length;
+
+    if (generalIndex < 0 || generalIndex >= validCandidateCount) {
+        return null;
+    }
+
+    let lower = 0;
+    let upper = totalCandidateCount - 1;
+
+    while (lower < upper) {
+        const middle = Math.floor((lower + upper) / 2);
+        const validThroughMiddle = middle + 1 - countSortedValuesAtMost(invalidCandidates, middle);
+
+        if (validThroughMiddle > generalIndex) {
+            upper = middle;
+        } else {
+            lower = middle + 1;
+        }
+    }
+
+    return decodeOctantCandidate(lower, colorCount);
+}
+
+function getGeneralOctantInvalidCandidates(colorCount) {
+    if (generalOctantInvalidCandidateCache.has(colorCount)) {
+        return generalOctantInvalidCandidateCache.get(colorCount);
+    }
+
+    const invalidCandidates = new Set();
+
+    for (let color = 0; color < colorCount; color += 1) {
+        invalidCandidates.add(encodeOctantCandidate([color, color, color, color], colorCount));
+    }
+
+    for (let firstColor = 0; firstColor < colorCount - 1; firstColor += 1) {
+        for (let secondColor = firstColor + 1; secondColor < colorCount; secondColor += 1) {
+            for (let firstPosition = 0; firstPosition < 3; firstPosition += 1) {
+                for (let secondPosition = firstPosition + 1; secondPosition < 4; secondPosition += 1) {
+                    const colorIndices = [secondColor, secondColor, secondColor, secondColor];
+                    colorIndices[firstPosition] = firstColor;
+                    colorIndices[secondPosition] = firstColor;
+                    invalidCandidates.add(encodeOctantCandidate(colorIndices, colorCount));
+                }
+            }
+        }
+    }
+
+    const sortedInvalidCandidates = [...invalidCandidates].sort((a, b) => a - b);
+    generalOctantInvalidCandidateCache.set(colorCount, sortedInvalidCandidates);
+    return sortedInvalidCandidates;
+}
+
+function countSortedValuesAtMost(values, limit) {
+    let lower = 0;
+    let upper = values.length;
+
+    while (lower < upper) {
+        const middle = Math.floor((lower + upper) / 2);
+
+        if (values[middle] <= limit) {
+            lower = middle + 1;
+        } else {
+            upper = middle;
+        }
+    }
+
+    return lower;
+}
+
+function encodeOctantCandidate(colorIndices, colorCount) {
+    return ((colorIndices[0] * colorCount + colorIndices[1]) * colorCount + colorIndices[2])
+        * colorCount + colorIndices[3];
+}
+
+function decodeOctantCandidate(candidate, colorCount) {
+    const fourth = candidate % colorCount;
+    let remaining = Math.floor(candidate / colorCount);
+    const third = remaining % colorCount;
+    remaining = Math.floor(remaining / colorCount);
+    const second = remaining % colorCount;
+    const first = Math.floor(remaining / colorCount);
+
+    return [first, second, third, fourth];
 }
 
 function getExactPrimeIndex(factor) {
@@ -1853,17 +2282,23 @@ function resizeRenderer() {
 
     tunnelCamera.aspect = width / height;
     tunnelCamera.updateProjectionMatrix();
+    requestRender();
+}
+
+function requestRender() {
+    if (renderFrameId !== null) {
+        return;
+    }
+
+    renderFrameId = requestAnimationFrame(render);
 }
 
 function render(time) {
+    renderFrameId = null;
     const deltaSeconds = previousRenderTime === 0
         ? 1 / 60
         : Math.min(0.05, (time - previousRenderTime) / 1000);
     previousRenderTime = time;
-
-    const lightSweep = time * 0.0004;
-    keyLight.position.x = Math.cos(lightSweep) * 260 - 80;
-    keyLight.position.y = 360 + Math.sin(lightSweep * 0.7) * 80;
 
     updateTunnelKeyboardControls(deltaSeconds);
     smoothTunnelMotion(deltaSeconds);
@@ -1873,6 +2308,29 @@ function render(time) {
     updateTunnelVisibility();
 
     renderer.render(scene, tunnelCamera);
+
+    if (shouldContinueRendering()) {
+        requestRender();
+    }
+}
+
+function shouldContinueRendering() {
+    return isTunnelMotionActive() || hasRepeatingTunnelKey();
+}
+
+function isTunnelMotionActive() {
+    return Math.abs(tunnelTargetTravel - tunnelTravel) >= TUNNEL_MOTION_EPSILON
+        || Math.abs(tunnelTargetRotation - tunnelRotation) >= TUNNEL_MOTION_EPSILON;
+}
+
+function hasRepeatingTunnelKey() {
+    for (const key of activeTunnelKeys.keys()) {
+        if (key !== "shift") {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function updateTunnelCamera() {
@@ -1911,11 +2369,11 @@ function smoothTunnelMotion(deltaSeconds) {
     tunnelTravel += (tunnelTargetTravel - tunnelTravel) * smoothing;
     tunnelRotation += (tunnelTargetRotation - tunnelRotation) * smoothing;
 
-    if (Math.abs(tunnelTargetTravel - tunnelTravel) < 0.0005) {
+    if (Math.abs(tunnelTargetTravel - tunnelTravel) < TUNNEL_MOTION_EPSILON) {
         tunnelTravel = tunnelTargetTravel;
     }
 
-    if (Math.abs(tunnelTargetRotation - tunnelRotation) < 0.0005) {
+    if (Math.abs(tunnelTargetRotation - tunnelRotation) < TUNNEL_MOTION_EPSILON) {
         tunnelRotation = tunnelTargetRotation;
     }
 }
@@ -2124,6 +2582,7 @@ function handleTunnelKeydown(event) {
         if (key === "shift") {
             activeTunnelKeys.set(key, { nextRepeatTime: Infinity });
             accelerateHeldTunnelKeys();
+            requestRender();
             return;
         }
 
@@ -2135,11 +2594,13 @@ function handleTunnelKeydown(event) {
         activeTunnelKeys.set(key, {
             nextRepeatTime: performance.now() / 1000 + getTunnelKeyRepeatDelay(),
         });
+        requestRender();
     }
 }
 
 function handleTunnelKeyup(event) {
     activeTunnelKeys.delete(normalizeTunnelKey(event.key));
+    requestRender();
 }
 
 function accelerateHeldTunnelKeys() {
@@ -2186,6 +2647,7 @@ function selectTunnelIndex(globalIndex) {
     tunnelTargetRotation = getNearestTopRotationForIndex(boundedIndex);
     setHoveredMesh(null);
     hideTooltip();
+    requestRender();
 }
 
 function getNearestTopRotationForIndex(globalIndex) {
@@ -2262,6 +2724,7 @@ function applyTunnelTravelDelta(deltaNumbers) {
     tunnelTargetTravel = nextTravel;
     setHoveredMesh(null);
     hideTooltip();
+    requestRender();
 }
 
 function getSelectedTunnelIndex() {
@@ -2337,6 +2800,8 @@ function setHoveredMesh(mesh) {
     if (hoveredMesh) {
         hoveredMesh.scale.setScalar(hoveredMesh.userData.baseRadius * 1.18);
     }
+
+    requestRender();
 }
 
 function showTooltip(mesh, event) {
@@ -2413,9 +2878,46 @@ function getPrimeIndexLabel(factor) {
         return "?";
     }
 
-    const log = Math.log(asNumber);
-    const estimate = Math.ceil(asNumber / Math.max(1, log - 1));
+    const estimate = estimatePrimeIndex(asNumber);
     return `~${estimate}`;
+}
+
+function estimatePrimeIndex(value) {
+    if (value > PRIME_INDEX_MAX && primeIndices.size > 0) {
+        return primeIndices.size + estimatePrimeCountBetween(PRIME_INDEX_MAX, value);
+    }
+
+    return Math.ceil(estimatePrimeCountUpTo(value));
+}
+
+function estimatePrimeCountBetween(start, end) {
+    if (end <= start) {
+        return 0;
+    }
+
+    return Math.max(1, Math.ceil(
+        estimatePrimeCountUpTo(end) - estimatePrimeCountUpTo(start),
+    ));
+}
+
+function estimatePrimeCountUpTo(value) {
+    const log = Math.log(value);
+
+    if (!Number.isFinite(log) || log <= 1) {
+        return value;
+    }
+
+    let factorial = 1;
+    let inverseLogPower = 1 / log;
+    let sum = inverseLogPower;
+
+    for (let term = 1; term < PRIME_INDEX_ESTIMATE_SERIES_TERMS; term += 1) {
+        factorial *= term;
+        inverseLogPower /= log;
+        sum += factorial * inverseLogPower;
+    }
+
+    return value * sum;
 }
 
 function formatBigIntWithCommas(value) {
